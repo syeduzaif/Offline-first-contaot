@@ -1,0 +1,70 @@
+name: offline_dummy_app
+description: "Offline-first reference app — Contacts domain backed by JSONPlaceholder."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Local DB (encryption via sqlite3mc passphrase, see hooks below)
+  drift: ^2.33.0
+  drift_flutter: ^0.3.0
+  sqlite3: ^3.3.1
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Sync engine + REST transport
+  offline_first_sync_drift: ^0.1.2
+  offline_first_sync_drift_rest: ^0.1.2
+
+  # State management & DI
+  flutter_riverpod: ^3.3.1
+
+  # HTTP & cache (non-sync reads)
+  dio: ^5.7.0
+  dio_cache_interceptor: ^3.5.0
+  dio_cache_interceptor_db_store: ^6.0.0
+
+  # Connectivity & background
+  connectivity_plus: ^7.1.1
+  workmanager: ^0.9.0+3
+
+  # Secure storage for SQLCipher passphrase
+  flutter_secure_storage: ^9.2.4
+
+  # Models
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+
+  # Utilities
+  uuid: ^4.5.1
+  logger: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Codegen
+  build_runner: ^2.4.13
+  drift_dev: ^2.33.0
+  freezed: ^3.2.5
+  json_serializable: ^6.8.0
+
+  # Testing
+  mocktail: ^1.0.4
+
+# Build the bundled sqlite3 with the multi-cipher (sqlite3mc) variant
+# so PRAGMA key works for at-rest encryption.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
+
+flutter:
+  uses-material-design: true
