@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/database.dart';
+import '../../../auto_call/presentation/pages/schedule_call_page.dart';
+import '../../../auto_call/presentation/widgets/quick_dial_button.dart';
 import '../controllers/providers.dart';
 import 'contact_edit_page.dart';
 
@@ -18,6 +20,25 @@ class ContactDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Contact'),
         actions: [
+          asyncContact.maybeWhen(
+            data: (c) =>
+                c == null ? const SizedBox.shrink() : QuickDialButton(contact: c),
+            orElse: SizedBox.shrink,
+          ),
+          asyncContact.maybeWhen(
+            data: (c) => c == null
+                ? const SizedBox.shrink()
+                : IconButton(
+                    icon: const Icon(Icons.alarm_add),
+                    tooltip: 'Schedule call',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ScheduleCallPage(prefilledContact: c),
+                      ),
+                    ),
+                  ),
+            orElse: SizedBox.shrink,
+          ),
           asyncContact.maybeWhen(
             data: (c) => c == null
                 ? const SizedBox.shrink()

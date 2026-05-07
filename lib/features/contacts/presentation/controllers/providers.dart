@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:offline_first_sync_drift/offline_first_sync_drift.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/connectivity_service.dart';
@@ -95,4 +96,58 @@ final dioProvider = Provider<Dio>((ref) {
 final jsonPlaceholderTransportProvider =
     Provider<JsonPlaceholderTransport>((ref) {
   return JsonPlaceholderTransport(dio: ref.watch(dioProvider));
+});
+
+/// Live snapshot of the outbox, refreshed whenever the sync engine emits.
+final outboxOpsProvider = StreamProvider<List<Op>>((ref) async* {
+  final svc = ref.watch(syncEngineServiceProvider);
+  Future<List<Op>> snapshot() => svc.db.takeOutbox(limit: 100);
+  yield await snapshot();
+  await for (final _ in svc.statusStream) {
+    yield await snapshot();
+  }
+});
+
+/// Buffered ring of the last 50 sync events (newest first).
+final syncEventLogProvider = StreamProvider<List<SyncEvent>>((ref) async* {
+  final svc = ref.watch(syncEngineServiceProvider);
+  final buffer = <SyncEvent>[];
+  yield List.of(buffer);
+  await for (final event in svc.events) {
+    buffer.insert(0, event);
+    if (buffer.length > 50) buffer.removeLast();
+    yield List.of(buffer);
+  }
+});
+
+class DbStats {
+  const DbStats({
+    required this.activeCount,
+    required this.deletedCount,
+    required this.queuedCount,
+    required this.mostRecentUpdate,
+  });
+  final int activeCount;
+  final int deletedCount;
+  final int queuedCount;
+  final DateTime? mostRecentUpdate;
+}
+
+final dbStatsProvider = StreamProvider<DbStats>((ref) async* {
+  final dao = ref.watch(contactsDaoProvider);
+  final svc = ref.watch(syncEngineServiceProvider);
+
+  Future<DbStats> snapshot() async {
+    return DbStats(
+      activeCount: await dao.countActive(),
+      deletedCount: await dao.countDeletedLocally(),
+      queuedCount: await svc.pendingCount(),
+      mostRecentUpdate: await dao.mostRecentUpdate(),
+    );
+  }
+
+  yield await snapshot();
+  await for (final _ in svc.statusStream) {
+    yield await snapshot();
+  }
 });

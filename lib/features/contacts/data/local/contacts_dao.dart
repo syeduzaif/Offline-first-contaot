@@ -37,4 +37,27 @@ class ContactsDao extends DatabaseAccessor<AppDatabase> with _$ContactsDaoMixin 
   Future<int> hardDelete(String id) {
     return (delete(contacts)..where((t) => t.id.equals(id))).go();
   }
+
+  Future<int> countActive() async {
+    final row = await (selectOnly(contacts)
+          ..addColumns([contacts.id.count()])
+          ..where(contacts.deletedAtLocal.isNull()))
+        .getSingle();
+    return row.read(contacts.id.count()) ?? 0;
+  }
+
+  Future<int> countDeletedLocally() async {
+    final row = await (selectOnly(contacts)
+          ..addColumns([contacts.id.count()])
+          ..where(contacts.deletedAtLocal.isNotNull()))
+        .getSingle();
+    return row.read(contacts.id.count()) ?? 0;
+  }
+
+  Future<DateTime?> mostRecentUpdate() async {
+    final row = await (selectOnly(contacts)
+          ..addColumns([contacts.updatedAt.max()]))
+        .getSingle();
+    return row.read(contacts.updatedAt.max());
+  }
 }

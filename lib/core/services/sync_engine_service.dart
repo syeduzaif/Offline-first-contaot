@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:offline_first_sync_drift/offline_first_sync_drift.dart';
 
+import '../../features/auto_call/data/repositories/auto_call_repository.dart';
 import '../constants/app_constants.dart';
 import '../utils/logger.dart';
 import 'connectivity_service.dart';
@@ -13,6 +14,7 @@ class SyncEngineService {
     required this.db,
     required this.transport,
     required this.connectivity,
+    this.autoCallRepository,
   }) : engine = SyncEngine<AppDatabase>(
           db: db,
           transport: transport,
@@ -21,6 +23,14 @@ class SyncEngineService {
               kind: AppConstants.contactsKind,
               table: db.contacts,
               fromJson: Contact.fromJson,
+              toJson: (c) => c.toJson(),
+              getId: (c) => c.id,
+              getUpdatedAt: (c) => c.updatedAt,
+            ),
+            SyncableTable<CallLog>(
+              kind: AppConstants.callLogsKind,
+              table: db.callLogs,
+              fromJson: CallLog.fromJson,
               toJson: (c) => c.toJson(),
               getId: (c) => c.id,
               getUpdatedAt: (c) => c.updatedAt,
@@ -39,6 +49,7 @@ class SyncEngineService {
   final AppDatabase db;
   final JsonPlaceholderTransport transport;
   final ConnectivityService connectivity;
+  final AutoCallRepository? autoCallRepository;
   final SyncEngine<AppDatabase> engine;
 
   StreamSubscription<bool>? _connectivitySub;
@@ -66,11 +77,26 @@ class SyncEngineService {
       AppConstants.foregroundSyncInterval,
       (_) {
         if (connectivity.isOnline) unawaited(syncNow());
+        unawaited(_fireDueCalls());
       },
     );
 
     if (connectivity.isOnline) {
       await syncNow();
+    }
+    await _fireDueCalls();
+  }
+
+  Future<void> _fireDueCalls() async {
+    final repo = autoCallRepository;
+    if (repo == null) return;
+    try {
+      final fired = await repo.fireDueScheduledCalls(openDialer: false);
+      if (fired > 0) {
+        appLogger.i('Marked $fired scheduled call(s) as missed (foreground tick).');
+      }
+    } catch (e, st) {
+      appLogger.e('fireDueScheduledCalls failed', error: e, stackTrace: st);
     }
   }
 

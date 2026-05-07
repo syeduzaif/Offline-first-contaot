@@ -7,6 +7,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../../features/auto_call/data/local/call_log_table.dart';
+import '../../features/auto_call/data/local/scheduled_calls_table.dart';
 import '../../features/contacts/data/local/contacts_table.dart';
 import '../constants/app_constants.dart';
 
@@ -14,7 +16,7 @@ part 'database.g.dart';
 
 @DriftDatabase(
   include: {'package:offline_first_sync_drift/src/sync_tables.drift'},
-  tables: [Contacts],
+  tables: [Contacts, ScheduledCalls, CallLogs],
 )
 class AppDatabase extends _$AppDatabase with SyncDatabaseMixin {
   AppDatabase(super.executor);
@@ -23,11 +25,17 @@ class AppDatabase extends _$AppDatabase with SyncDatabaseMixin {
       : super(NativeDatabase.memory(setup: _verifyCipherIfPresent));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(scheduledCalls);
+            await m.createTable(callLogs);
+          }
+        },
       );
 
   static Future<AppDatabase> openEncrypted(String passphrase) async {

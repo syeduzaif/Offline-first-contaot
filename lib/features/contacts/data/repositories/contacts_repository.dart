@@ -13,11 +13,8 @@ import '../local/contacts_dao.dart';
 /// This is the outbox pattern guarantee — a crash between write and
 /// network call can never lose the user's intent.
 class ContactsRepository {
-  ContactsRepository({
-    required this.db,
-    required this.dao,
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
+  ContactsRepository({required this.db, required this.dao, Uuid? uuid})
+    : _uuid = uuid ?? const Uuid();
 
   final AppDatabase db;
   final ContactsDao dao;

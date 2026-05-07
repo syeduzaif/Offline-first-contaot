@@ -1376,13 +1376,1253 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
   }
 }
 
+class $ScheduledCallsTable extends ScheduledCalls
+    with TableInfo<$ScheduledCallsTable, ScheduledCall> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScheduledCallsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactIdMeta = const VerificationMeta(
+    'contactId',
+  );
+  @override
+  late final GeneratedColumn<String> contactId = GeneratedColumn<String>(
+    'contact_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactNameMeta = const VerificationMeta(
+    'contactName',
+  );
+  @override
+  late final GeneratedColumn<String> contactName = GeneratedColumn<String>(
+    'contact_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _runAtMeta = const VerificationMeta('runAt');
+  @override
+  late final GeneratedColumn<DateTime> runAt = GeneratedColumn<DateTime>(
+    'run_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firedAtMeta = const VerificationMeta(
+    'firedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> firedAt = GeneratedColumn<DateTime>(
+    'fired_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    contactId,
+    contactName,
+    phone,
+    runAt,
+    reason,
+    createdAt,
+    firedAt,
+    outcome,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scheduled_calls';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScheduledCall> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('contact_id')) {
+      context.handle(
+        _contactIdMeta,
+        contactId.isAcceptableOrUnknown(data['contact_id']!, _contactIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contactIdMeta);
+    }
+    if (data.containsKey('contact_name')) {
+      context.handle(
+        _contactNameMeta,
+        contactName.isAcceptableOrUnknown(
+          data['contact_name']!,
+          _contactNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contactNameMeta);
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('run_at')) {
+      context.handle(
+        _runAtMeta,
+        runAt.isAcceptableOrUnknown(data['run_at']!, _runAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_runAtMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('fired_at')) {
+      context.handle(
+        _firedAtMeta,
+        firedAt.isAcceptableOrUnknown(data['fired_at']!, _firedAtMeta),
+      );
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ScheduledCall map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScheduledCall(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      contactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_id'],
+      )!,
+      contactName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_name'],
+      )!,
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      runAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}run_at'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      firedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fired_at'],
+      ),
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      ),
+    );
+  }
+
+  @override
+  $ScheduledCallsTable createAlias(String alias) {
+    return $ScheduledCallsTable(attachedDatabase, alias);
+  }
+}
+
+class ScheduledCall extends DataClass implements Insertable<ScheduledCall> {
+  final String id;
+  final String contactId;
+  final String contactName;
+  final String? phone;
+  final DateTime runAt;
+  final String? reason;
+  final DateTime createdAt;
+  final DateTime? firedAt;
+
+  /// 'placed' | 'cancelled' | 'missed' | null (still upcoming)
+  final String? outcome;
+  const ScheduledCall({
+    required this.id,
+    required this.contactId,
+    required this.contactName,
+    this.phone,
+    required this.runAt,
+    this.reason,
+    required this.createdAt,
+    this.firedAt,
+    this.outcome,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['contact_id'] = Variable<String>(contactId);
+    map['contact_name'] = Variable<String>(contactName);
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    map['run_at'] = Variable<DateTime>(runAt);
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || firedAt != null) {
+      map['fired_at'] = Variable<DateTime>(firedAt);
+    }
+    if (!nullToAbsent || outcome != null) {
+      map['outcome'] = Variable<String>(outcome);
+    }
+    return map;
+  }
+
+  ScheduledCallsCompanion toCompanion(bool nullToAbsent) {
+    return ScheduledCallsCompanion(
+      id: Value(id),
+      contactId: Value(contactId),
+      contactName: Value(contactName),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      runAt: Value(runAt),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      createdAt: Value(createdAt),
+      firedAt: firedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firedAt),
+      outcome: outcome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outcome),
+    );
+  }
+
+  factory ScheduledCall.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScheduledCall(
+      id: serializer.fromJson<String>(json['id']),
+      contactId: serializer.fromJson<String>(json['contactId']),
+      contactName: serializer.fromJson<String>(json['contactName']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      runAt: serializer.fromJson<DateTime>(json['runAt']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      firedAt: serializer.fromJson<DateTime?>(json['firedAt']),
+      outcome: serializer.fromJson<String?>(json['outcome']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'contactId': serializer.toJson<String>(contactId),
+      'contactName': serializer.toJson<String>(contactName),
+      'phone': serializer.toJson<String?>(phone),
+      'runAt': serializer.toJson<DateTime>(runAt),
+      'reason': serializer.toJson<String?>(reason),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'firedAt': serializer.toJson<DateTime?>(firedAt),
+      'outcome': serializer.toJson<String?>(outcome),
+    };
+  }
+
+  ScheduledCall copyWith({
+    String? id,
+    String? contactId,
+    String? contactName,
+    Value<String?> phone = const Value.absent(),
+    DateTime? runAt,
+    Value<String?> reason = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> firedAt = const Value.absent(),
+    Value<String?> outcome = const Value.absent(),
+  }) => ScheduledCall(
+    id: id ?? this.id,
+    contactId: contactId ?? this.contactId,
+    contactName: contactName ?? this.contactName,
+    phone: phone.present ? phone.value : this.phone,
+    runAt: runAt ?? this.runAt,
+    reason: reason.present ? reason.value : this.reason,
+    createdAt: createdAt ?? this.createdAt,
+    firedAt: firedAt.present ? firedAt.value : this.firedAt,
+    outcome: outcome.present ? outcome.value : this.outcome,
+  );
+  ScheduledCall copyWithCompanion(ScheduledCallsCompanion data) {
+    return ScheduledCall(
+      id: data.id.present ? data.id.value : this.id,
+      contactId: data.contactId.present ? data.contactId.value : this.contactId,
+      contactName: data.contactName.present
+          ? data.contactName.value
+          : this.contactName,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      runAt: data.runAt.present ? data.runAt.value : this.runAt,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      firedAt: data.firedAt.present ? data.firedAt.value : this.firedAt,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduledCall(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('contactName: $contactName, ')
+          ..write('phone: $phone, ')
+          ..write('runAt: $runAt, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('firedAt: $firedAt, ')
+          ..write('outcome: $outcome')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    contactId,
+    contactName,
+    phone,
+    runAt,
+    reason,
+    createdAt,
+    firedAt,
+    outcome,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScheduledCall &&
+          other.id == this.id &&
+          other.contactId == this.contactId &&
+          other.contactName == this.contactName &&
+          other.phone == this.phone &&
+          other.runAt == this.runAt &&
+          other.reason == this.reason &&
+          other.createdAt == this.createdAt &&
+          other.firedAt == this.firedAt &&
+          other.outcome == this.outcome);
+}
+
+class ScheduledCallsCompanion extends UpdateCompanion<ScheduledCall> {
+  final Value<String> id;
+  final Value<String> contactId;
+  final Value<String> contactName;
+  final Value<String?> phone;
+  final Value<DateTime> runAt;
+  final Value<String?> reason;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> firedAt;
+  final Value<String?> outcome;
+  final Value<int> rowid;
+  const ScheduledCallsCompanion({
+    this.id = const Value.absent(),
+    this.contactId = const Value.absent(),
+    this.contactName = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.runAt = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.firedAt = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ScheduledCallsCompanion.insert({
+    required String id,
+    required String contactId,
+    required String contactName,
+    this.phone = const Value.absent(),
+    required DateTime runAt,
+    this.reason = const Value.absent(),
+    required DateTime createdAt,
+    this.firedAt = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       contactId = Value(contactId),
+       contactName = Value(contactName),
+       runAt = Value(runAt),
+       createdAt = Value(createdAt);
+  static Insertable<ScheduledCall> custom({
+    Expression<String>? id,
+    Expression<String>? contactId,
+    Expression<String>? contactName,
+    Expression<String>? phone,
+    Expression<DateTime>? runAt,
+    Expression<String>? reason,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? firedAt,
+    Expression<String>? outcome,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (contactId != null) 'contact_id': contactId,
+      if (contactName != null) 'contact_name': contactName,
+      if (phone != null) 'phone': phone,
+      if (runAt != null) 'run_at': runAt,
+      if (reason != null) 'reason': reason,
+      if (createdAt != null) 'created_at': createdAt,
+      if (firedAt != null) 'fired_at': firedAt,
+      if (outcome != null) 'outcome': outcome,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ScheduledCallsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? contactId,
+    Value<String>? contactName,
+    Value<String?>? phone,
+    Value<DateTime>? runAt,
+    Value<String?>? reason,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? firedAt,
+    Value<String?>? outcome,
+    Value<int>? rowid,
+  }) {
+    return ScheduledCallsCompanion(
+      id: id ?? this.id,
+      contactId: contactId ?? this.contactId,
+      contactName: contactName ?? this.contactName,
+      phone: phone ?? this.phone,
+      runAt: runAt ?? this.runAt,
+      reason: reason ?? this.reason,
+      createdAt: createdAt ?? this.createdAt,
+      firedAt: firedAt ?? this.firedAt,
+      outcome: outcome ?? this.outcome,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (contactId.present) {
+      map['contact_id'] = Variable<String>(contactId.value);
+    }
+    if (contactName.present) {
+      map['contact_name'] = Variable<String>(contactName.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (runAt.present) {
+      map['run_at'] = Variable<DateTime>(runAt.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (firedAt.present) {
+      map['fired_at'] = Variable<DateTime>(firedAt.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScheduledCallsCompanion(')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('contactName: $contactName, ')
+          ..write('phone: $phone, ')
+          ..write('runAt: $runAt, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('firedAt: $firedAt, ')
+          ..write('outcome: $outcome, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CallLogsTable extends CallLogs with TableInfo<$CallLogsTable, CallLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CallLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtLocalMeta = const VerificationMeta(
+    'deletedAtLocal',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAtLocal =
+      GeneratedColumn<DateTime>(
+        'deleted_at_local',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactIdMeta = const VerificationMeta(
+    'contactId',
+  );
+  @override
+  late final GeneratedColumn<String> contactId = GeneratedColumn<String>(
+    'contact_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contactNameMeta = const VerificationMeta(
+    'contactName',
+  );
+  @override
+  late final GeneratedColumn<String> contactName = GeneratedColumn<String>(
+    'contact_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _placedAtMeta = const VerificationMeta(
+    'placedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> placedAt = GeneratedColumn<DateTime>(
+    'placed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _durationSecMeta = const VerificationMeta(
+    'durationSec',
+  );
+  @override
+  late final GeneratedColumn<int> durationSec = GeneratedColumn<int>(
+    'duration_sec',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+    'origin',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    updatedAt,
+    deletedAt,
+    deletedAtLocal,
+    id,
+    contactId,
+    contactName,
+    phone,
+    placedAt,
+    durationSec,
+    notes,
+    origin,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'call_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CallLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at_local')) {
+      context.handle(
+        _deletedAtLocalMeta,
+        deletedAtLocal.isAcceptableOrUnknown(
+          data['deleted_at_local']!,
+          _deletedAtLocalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('contact_id')) {
+      context.handle(
+        _contactIdMeta,
+        contactId.isAcceptableOrUnknown(data['contact_id']!, _contactIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contactIdMeta);
+    }
+    if (data.containsKey('contact_name')) {
+      context.handle(
+        _contactNameMeta,
+        contactName.isAcceptableOrUnknown(
+          data['contact_name']!,
+          _contactNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contactNameMeta);
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('placed_at')) {
+      context.handle(
+        _placedAtMeta,
+        placedAt.isAcceptableOrUnknown(data['placed_at']!, _placedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_placedAtMeta);
+    }
+    if (data.containsKey('duration_sec')) {
+      context.handle(
+        _durationSecMeta,
+        durationSec.isAcceptableOrUnknown(
+          data['duration_sec']!,
+          _durationSecMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('origin')) {
+      context.handle(
+        _originMeta,
+        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CallLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CallLog(
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      deletedAtLocal: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at_local'],
+      ),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      contactId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_id'],
+      )!,
+      contactName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_name'],
+      )!,
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      placedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}placed_at'],
+      )!,
+      durationSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_sec'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      origin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin'],
+      )!,
+    );
+  }
+
+  @override
+  $CallLogsTable createAlias(String alias) {
+    return $CallLogsTable(attachedDatabase, alias);
+  }
+}
+
+class CallLog extends DataClass implements Insertable<CallLog> {
+  /// Время последнего обновления (UTC).
+  final DateTime updatedAt;
+
+  /// Время удаления на сервере (UTC), null если не удалено.
+  final DateTime? deletedAt;
+
+  /// Время локального удаления (UTC), для отложенной очистки.
+  final DateTime? deletedAtLocal;
+  final String id;
+  final String contactId;
+  final String contactName;
+  final String? phone;
+  final DateTime placedAt;
+  final int durationSec;
+  final String? notes;
+
+  /// 'manual' (Quick Dial) | 'scheduled' (fired by the auto_call timer)
+  final String origin;
+  const CallLog({
+    required this.updatedAt,
+    this.deletedAt,
+    this.deletedAtLocal,
+    required this.id,
+    required this.contactId,
+    required this.contactName,
+    this.phone,
+    required this.placedAt,
+    required this.durationSec,
+    this.notes,
+    required this.origin,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedAtLocal != null) {
+      map['deleted_at_local'] = Variable<DateTime>(deletedAtLocal);
+    }
+    map['id'] = Variable<String>(id);
+    map['contact_id'] = Variable<String>(contactId);
+    map['contact_name'] = Variable<String>(contactName);
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    map['placed_at'] = Variable<DateTime>(placedAt);
+    map['duration_sec'] = Variable<int>(durationSec);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['origin'] = Variable<String>(origin);
+    return map;
+  }
+
+  CallLogsCompanion toCompanion(bool nullToAbsent) {
+    return CallLogsCompanion(
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedAtLocal: deletedAtLocal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtLocal),
+      id: Value(id),
+      contactId: Value(contactId),
+      contactName: Value(contactName),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      placedAt: Value(placedAt),
+      durationSec: Value(durationSec),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      origin: Value(origin),
+    );
+  }
+
+  factory CallLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CallLog(
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedAtLocal: serializer.fromJson<DateTime?>(json['deletedAtLocal']),
+      id: serializer.fromJson<String>(json['id']),
+      contactId: serializer.fromJson<String>(json['contactId']),
+      contactName: serializer.fromJson<String>(json['contactName']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      placedAt: serializer.fromJson<DateTime>(json['placedAt']),
+      durationSec: serializer.fromJson<int>(json['durationSec']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      origin: serializer.fromJson<String>(json['origin']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedAtLocal': serializer.toJson<DateTime?>(deletedAtLocal),
+      'id': serializer.toJson<String>(id),
+      'contactId': serializer.toJson<String>(contactId),
+      'contactName': serializer.toJson<String>(contactName),
+      'phone': serializer.toJson<String?>(phone),
+      'placedAt': serializer.toJson<DateTime>(placedAt),
+      'durationSec': serializer.toJson<int>(durationSec),
+      'notes': serializer.toJson<String?>(notes),
+      'origin': serializer.toJson<String>(origin),
+    };
+  }
+
+  CallLog copyWith({
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<DateTime?> deletedAtLocal = const Value.absent(),
+    String? id,
+    String? contactId,
+    String? contactName,
+    Value<String?> phone = const Value.absent(),
+    DateTime? placedAt,
+    int? durationSec,
+    Value<String?> notes = const Value.absent(),
+    String? origin,
+  }) => CallLog(
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    deletedAtLocal: deletedAtLocal.present
+        ? deletedAtLocal.value
+        : this.deletedAtLocal,
+    id: id ?? this.id,
+    contactId: contactId ?? this.contactId,
+    contactName: contactName ?? this.contactName,
+    phone: phone.present ? phone.value : this.phone,
+    placedAt: placedAt ?? this.placedAt,
+    durationSec: durationSec ?? this.durationSec,
+    notes: notes.present ? notes.value : this.notes,
+    origin: origin ?? this.origin,
+  );
+  CallLog copyWithCompanion(CallLogsCompanion data) {
+    return CallLog(
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedAtLocal: data.deletedAtLocal.present
+          ? data.deletedAtLocal.value
+          : this.deletedAtLocal,
+      id: data.id.present ? data.id.value : this.id,
+      contactId: data.contactId.present ? data.contactId.value : this.contactId,
+      contactName: data.contactName.present
+          ? data.contactName.value
+          : this.contactName,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      placedAt: data.placedAt.present ? data.placedAt.value : this.placedAt,
+      durationSec: data.durationSec.present
+          ? data.durationSec.value
+          : this.durationSec,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      origin: data.origin.present ? data.origin.value : this.origin,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CallLog(')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedAtLocal: $deletedAtLocal, ')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('contactName: $contactName, ')
+          ..write('phone: $phone, ')
+          ..write('placedAt: $placedAt, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('notes: $notes, ')
+          ..write('origin: $origin')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    updatedAt,
+    deletedAt,
+    deletedAtLocal,
+    id,
+    contactId,
+    contactName,
+    phone,
+    placedAt,
+    durationSec,
+    notes,
+    origin,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CallLog &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedAtLocal == this.deletedAtLocal &&
+          other.id == this.id &&
+          other.contactId == this.contactId &&
+          other.contactName == this.contactName &&
+          other.phone == this.phone &&
+          other.placedAt == this.placedAt &&
+          other.durationSec == this.durationSec &&
+          other.notes == this.notes &&
+          other.origin == this.origin);
+}
+
+class CallLogsCompanion extends UpdateCompanion<CallLog> {
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<DateTime?> deletedAtLocal;
+  final Value<String> id;
+  final Value<String> contactId;
+  final Value<String> contactName;
+  final Value<String?> phone;
+  final Value<DateTime> placedAt;
+  final Value<int> durationSec;
+  final Value<String?> notes;
+  final Value<String> origin;
+  final Value<int> rowid;
+  const CallLogsCompanion({
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedAtLocal = const Value.absent(),
+    this.id = const Value.absent(),
+    this.contactId = const Value.absent(),
+    this.contactName = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.placedAt = const Value.absent(),
+    this.durationSec = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CallLogsCompanion.insert({
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedAtLocal = const Value.absent(),
+    required String id,
+    required String contactId,
+    required String contactName,
+    this.phone = const Value.absent(),
+    required DateTime placedAt,
+    this.durationSec = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : updatedAt = Value(updatedAt),
+       id = Value(id),
+       contactId = Value(contactId),
+       contactName = Value(contactName),
+       placedAt = Value(placedAt);
+  static Insertable<CallLog> custom({
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<DateTime>? deletedAtLocal,
+    Expression<String>? id,
+    Expression<String>? contactId,
+    Expression<String>? contactName,
+    Expression<String>? phone,
+    Expression<DateTime>? placedAt,
+    Expression<int>? durationSec,
+    Expression<String>? notes,
+    Expression<String>? origin,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedAtLocal != null) 'deleted_at_local': deletedAtLocal,
+      if (id != null) 'id': id,
+      if (contactId != null) 'contact_id': contactId,
+      if (contactName != null) 'contact_name': contactName,
+      if (phone != null) 'phone': phone,
+      if (placedAt != null) 'placed_at': placedAt,
+      if (durationSec != null) 'duration_sec': durationSec,
+      if (notes != null) 'notes': notes,
+      if (origin != null) 'origin': origin,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CallLogsCompanion copyWith({
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<DateTime?>? deletedAtLocal,
+    Value<String>? id,
+    Value<String>? contactId,
+    Value<String>? contactName,
+    Value<String?>? phone,
+    Value<DateTime>? placedAt,
+    Value<int>? durationSec,
+    Value<String?>? notes,
+    Value<String>? origin,
+    Value<int>? rowid,
+  }) {
+    return CallLogsCompanion(
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedAtLocal: deletedAtLocal ?? this.deletedAtLocal,
+      id: id ?? this.id,
+      contactId: contactId ?? this.contactId,
+      contactName: contactName ?? this.contactName,
+      phone: phone ?? this.phone,
+      placedAt: placedAt ?? this.placedAt,
+      durationSec: durationSec ?? this.durationSec,
+      notes: notes ?? this.notes,
+      origin: origin ?? this.origin,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedAtLocal.present) {
+      map['deleted_at_local'] = Variable<DateTime>(deletedAtLocal.value);
+    }
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (contactId.present) {
+      map['contact_id'] = Variable<String>(contactId.value);
+    }
+    if (contactName.present) {
+      map['contact_name'] = Variable<String>(contactName.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (placedAt.present) {
+      map['placed_at'] = Variable<DateTime>(placedAt.value);
+    }
+    if (durationSec.present) {
+      map['duration_sec'] = Variable<int>(durationSec.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CallLogsCompanion(')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedAtLocal: $deletedAtLocal, ')
+          ..write('id: $id, ')
+          ..write('contactId: $contactId, ')
+          ..write('contactName: $contactName, ')
+          ..write('phone: $phone, ')
+          ..write('placedAt: $placedAt, ')
+          ..write('durationSec: $durationSec, ')
+          ..write('notes: $notes, ')
+          ..write('origin: $origin, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
-  _$AppDatabase.connect(DatabaseConnection c) : super.connect(c);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
   late final $SyncOutboxTable syncOutbox = $SyncOutboxTable(this);
   late final $ContactsTable contacts = $ContactsTable(this);
+  late final $ScheduledCallsTable scheduledCalls = $ScheduledCallsTable(this);
+  late final $CallLogsTable callLogs = $CallLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1391,6 +2631,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncCursors,
     syncOutbox,
     contacts,
+    scheduledCalls,
+    callLogs,
   ];
   @override
   DriftDatabaseOptions get options =>
@@ -2208,6 +3450,600 @@ typedef $$ContactsTableProcessedTableManager =
       Contact,
       PrefetchHooks Function()
     >;
+typedef $$ScheduledCallsTableCreateCompanionBuilder =
+    ScheduledCallsCompanion Function({
+      required String id,
+      required String contactId,
+      required String contactName,
+      Value<String?> phone,
+      required DateTime runAt,
+      Value<String?> reason,
+      required DateTime createdAt,
+      Value<DateTime?> firedAt,
+      Value<String?> outcome,
+      Value<int> rowid,
+    });
+typedef $$ScheduledCallsTableUpdateCompanionBuilder =
+    ScheduledCallsCompanion Function({
+      Value<String> id,
+      Value<String> contactId,
+      Value<String> contactName,
+      Value<String?> phone,
+      Value<DateTime> runAt,
+      Value<String?> reason,
+      Value<DateTime> createdAt,
+      Value<DateTime?> firedAt,
+      Value<String?> outcome,
+      Value<int> rowid,
+    });
+
+class $$ScheduledCallsTableFilterComposer
+    extends Composer<_$AppDatabase, $ScheduledCallsTable> {
+  $$ScheduledCallsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get runAt => $composableBuilder(
+    column: $table.runAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get firedAt => $composableBuilder(
+    column: $table.firedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ScheduledCallsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScheduledCallsTable> {
+  $$ScheduledCallsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get runAt => $composableBuilder(
+    column: $table.runAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get firedAt => $composableBuilder(
+    column: $table.firedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ScheduledCallsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScheduledCallsTable> {
+  $$ScheduledCallsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get contactId =>
+      $composableBuilder(column: $table.contactId, builder: (column) => column);
+
+  GeneratedColumn<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get runAt =>
+      $composableBuilder(column: $table.runAt, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get firedAt =>
+      $composableBuilder(column: $table.firedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+}
+
+class $$ScheduledCallsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScheduledCallsTable,
+          ScheduledCall,
+          $$ScheduledCallsTableFilterComposer,
+          $$ScheduledCallsTableOrderingComposer,
+          $$ScheduledCallsTableAnnotationComposer,
+          $$ScheduledCallsTableCreateCompanionBuilder,
+          $$ScheduledCallsTableUpdateCompanionBuilder,
+          (
+            ScheduledCall,
+            BaseReferences<_$AppDatabase, $ScheduledCallsTable, ScheduledCall>,
+          ),
+          ScheduledCall,
+          PrefetchHooks Function()
+        > {
+  $$ScheduledCallsTableTableManager(
+    _$AppDatabase db,
+    $ScheduledCallsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScheduledCallsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScheduledCallsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScheduledCallsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> contactId = const Value.absent(),
+                Value<String> contactName = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<DateTime> runAt = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> firedAt = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduledCallsCompanion(
+                id: id,
+                contactId: contactId,
+                contactName: contactName,
+                phone: phone,
+                runAt: runAt,
+                reason: reason,
+                createdAt: createdAt,
+                firedAt: firedAt,
+                outcome: outcome,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String contactId,
+                required String contactName,
+                Value<String?> phone = const Value.absent(),
+                required DateTime runAt,
+                Value<String?> reason = const Value.absent(),
+                required DateTime createdAt,
+                Value<DateTime?> firedAt = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ScheduledCallsCompanion.insert(
+                id: id,
+                contactId: contactId,
+                contactName: contactName,
+                phone: phone,
+                runAt: runAt,
+                reason: reason,
+                createdAt: createdAt,
+                firedAt: firedAt,
+                outcome: outcome,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ScheduledCallsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScheduledCallsTable,
+      ScheduledCall,
+      $$ScheduledCallsTableFilterComposer,
+      $$ScheduledCallsTableOrderingComposer,
+      $$ScheduledCallsTableAnnotationComposer,
+      $$ScheduledCallsTableCreateCompanionBuilder,
+      $$ScheduledCallsTableUpdateCompanionBuilder,
+      (
+        ScheduledCall,
+        BaseReferences<_$AppDatabase, $ScheduledCallsTable, ScheduledCall>,
+      ),
+      ScheduledCall,
+      PrefetchHooks Function()
+    >;
+typedef $$CallLogsTableCreateCompanionBuilder =
+    CallLogsCompanion Function({
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<DateTime?> deletedAtLocal,
+      required String id,
+      required String contactId,
+      required String contactName,
+      Value<String?> phone,
+      required DateTime placedAt,
+      Value<int> durationSec,
+      Value<String?> notes,
+      Value<String> origin,
+      Value<int> rowid,
+    });
+typedef $$CallLogsTableUpdateCompanionBuilder =
+    CallLogsCompanion Function({
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<DateTime?> deletedAtLocal,
+      Value<String> id,
+      Value<String> contactId,
+      Value<String> contactName,
+      Value<String?> phone,
+      Value<DateTime> placedAt,
+      Value<int> durationSec,
+      Value<String?> notes,
+      Value<String> origin,
+      Value<int> rowid,
+    });
+
+class $$CallLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $CallLogsTable> {
+  $$CallLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAtLocal => $composableBuilder(
+    column: $table.deletedAtLocal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get placedAt => $composableBuilder(
+    column: $table.placedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CallLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CallLogsTable> {
+  $$CallLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAtLocal => $composableBuilder(
+    column: $table.deletedAtLocal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactId => $composableBuilder(
+    column: $table.contactId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get placedAt => $composableBuilder(
+    column: $table.placedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CallLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CallLogsTable> {
+  $$CallLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAtLocal => $composableBuilder(
+    column: $table.deletedAtLocal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get contactId =>
+      $composableBuilder(column: $table.contactId, builder: (column) => column);
+
+  GeneratedColumn<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get placedAt =>
+      $composableBuilder(column: $table.placedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+}
+
+class $$CallLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CallLogsTable,
+          CallLog,
+          $$CallLogsTableFilterComposer,
+          $$CallLogsTableOrderingComposer,
+          $$CallLogsTableAnnotationComposer,
+          $$CallLogsTableCreateCompanionBuilder,
+          $$CallLogsTableUpdateCompanionBuilder,
+          (CallLog, BaseReferences<_$AppDatabase, $CallLogsTable, CallLog>),
+          CallLog,
+          PrefetchHooks Function()
+        > {
+  $$CallLogsTableTableManager(_$AppDatabase db, $CallLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CallLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CallLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CallLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<DateTime?> deletedAtLocal = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String> contactId = const Value.absent(),
+                Value<String> contactName = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<DateTime> placedAt = const Value.absent(),
+                Value<int> durationSec = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> origin = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CallLogsCompanion(
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                deletedAtLocal: deletedAtLocal,
+                id: id,
+                contactId: contactId,
+                contactName: contactName,
+                phone: phone,
+                placedAt: placedAt,
+                durationSec: durationSec,
+                notes: notes,
+                origin: origin,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<DateTime?> deletedAtLocal = const Value.absent(),
+                required String id,
+                required String contactId,
+                required String contactName,
+                Value<String?> phone = const Value.absent(),
+                required DateTime placedAt,
+                Value<int> durationSec = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> origin = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CallLogsCompanion.insert(
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                deletedAtLocal: deletedAtLocal,
+                id: id,
+                contactId: contactId,
+                contactName: contactName,
+                phone: phone,
+                placedAt: placedAt,
+                durationSec: durationSec,
+                notes: notes,
+                origin: origin,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CallLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CallLogsTable,
+      CallLog,
+      $$CallLogsTableFilterComposer,
+      $$CallLogsTableOrderingComposer,
+      $$CallLogsTableAnnotationComposer,
+      $$CallLogsTableCreateCompanionBuilder,
+      $$CallLogsTableUpdateCompanionBuilder,
+      (CallLog, BaseReferences<_$AppDatabase, $CallLogsTable, CallLog>),
+      CallLog,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2218,4 +4054,8 @@ class $AppDatabaseManager {
       $$SyncOutboxTableTableManager(_db, _db.syncOutbox);
   $$ContactsTableTableManager get contacts =>
       $$ContactsTableTableManager(_db, _db.contacts);
+  $$ScheduledCallsTableTableManager get scheduledCalls =>
+      $$ScheduledCallsTableTableManager(_db, _db.scheduledCalls);
+  $$CallLogsTableTableManager get callLogs =>
+      $$CallLogsTableTableManager(_db, _db.callLogs);
 }

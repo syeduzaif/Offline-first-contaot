@@ -7,6 +7,7 @@ class AppConstants {
 
   static const String apiBaseUrl = 'https://jsonplaceholder.typicode.com';
   static const String contactsKind = 'users';
+  static const String callLogsKind = 'call_logs';
 
   static const Duration foregroundSyncInterval = Duration(seconds: 30);
   static const Duration backgroundSyncFrequency = Duration(minutes: 15);
