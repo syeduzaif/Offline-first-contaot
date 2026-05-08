@@ -1,6 +1,7 @@
 # CLAUDE.md — Flutter Offline-First App Agent Guidelines
 
-> This file tells the AI agent how to think, write, and structure code for this project.
+> This file tells the AI agent how to think, write, and structure code for an offline-first Flutter application.
+> The rules apply to **any** Flutter app built on the Drift + sync-engine + Riverpod stack — not a single project.
 > Keep code **simple**, **readable**, and **consistent**. If something can be done in fewer lines without sacrificing clarity — do it that way.
 
 ---
@@ -17,7 +18,7 @@
 
 ## 🔒 Outbox / Sync Invariant
 
-**The single most important rule in this codebase. Read it twice.**
+**The single most important rule. Read it twice.**
 
 > Every write to a synced table must — within the same Drift transaction — also enqueue a corresponding entry in `sync_outbox`. No exceptions.
 
@@ -28,34 +29,34 @@ This is the entire offline-first guarantee. Break this rule and the local DB and
 ```dart
 // ✅ Correct — atomic write + enqueue inside one transaction
 await db.transaction(() async {
-  await dao.upsert(contact);
+  await dao.upsert(entity);
   await db.enqueue(UpsertOp.create(
-    kind: kContactsKind,
-    id: contact.id,
-    payloadJson: contact.toJson(),
+    kind: kEntityKind,
+    id: entity.id,
+    payloadJson: entity.toJson(),
   ));
 });
 
 // ❌ Wrong — two separate commits, can desync on crash between them
-await dao.upsert(contact);
+await dao.upsert(entity);
 await db.enqueue(...);
 
 // ❌ Wrong — bypasses the repository entirely, no outbox at all
-await ref.read(contactsDaoProvider).upsert(contact);
+await ref.read(entityDaoProvider).upsert(entity);
 ```
 
 ### What counts as a "synced table"
 
-A table registered in `sync_engine.dart`'s `tables: [...]` list as a `SyncableTable<T>`. That list IS the registry.
+A table registered in the sync engine setup as a `SyncableTable<T>`. That registration list IS the registry.
 
 | Table | Synced? | Outbox enqueue? |
 |---|---|---|
-| `contacts` | ✅ kind `users` | required |
-| `call_logs` | ✅ kind `call_logs` | required |
-| `scheduled_calls` | ❌ local-only | NOT required |
+| `students` (registered as `SyncableTable<Student>`) | ✅ | required |
+| `orders` (registered as `SyncableTable<Order>`) | ✅ | required |
+| `drafts` (purely local) | ❌ | NOT required |
 | `sync_outbox`, `sync_cursors` | sync infrastructure | N/A |
 
-If you're adding a new table, decide first: is it synced or local-only? That decision determines whether every write needs an outbox enqueue. When in doubt, look at `sync_engine.dart`.
+When adding a new table, decide first: is it synced or local-only? That decision determines whether every write needs an outbox enqueue. When in doubt, look at the sync engine's table registration.
 
 ### How to enforce it
 
@@ -70,18 +71,18 @@ If you find yourself writing to a synced table outside a `db.transaction` that a
 
 1. **Bypassing the repository** — calling a DAO directly from a widget or notifier because the DAO happens to be exposed via a provider. The DAO doesn't know about sync; only the repo does.
 2. **Splitting the transaction** — running `dao.upsert` and `db.enqueue` as two separate `await`s. A crash between them desyncs.
-3. **Forgetting to enqueue when adding a new method** — a new `archiveContact()` method that writes the row but skips the outbox. The change is invisible to the server forever.
+3. **Forgetting to enqueue when adding a new method** — a new `archive()` method that writes the row but skips the outbox. The change is invisible to the server forever.
 4. **Writing to a synced table from a non-repository service** — only the repository (and the sync engine itself, on pull) has permission to write to synced tables.
 
-### The exception: pull-side writes inside `SyncEngine`
+### The exception: pull-side writes inside the sync engine
 
-When the sync engine pulls data from the server and writes it to the local DB, it does NOT enqueue an outbox entry. Pull is *receiving from the server* — there's nothing to send back. This exception lives entirely inside the `offline_first_sync_drift` package and the `JsonPlaceholderTransport`. **Code outside the engine never has this exception.**
+When the sync engine pulls data from the server and writes it to the local DB, it does NOT enqueue an outbox entry. Pull is *receiving from the server* — there's nothing to send back. This exception lives entirely inside the sync engine itself. **Code outside the engine never has this exception.**
 
 ### Checklist when reviewing any change touching a synced table
 
 1. Is this write going through a repository?
 2. Is the repository wrapping the write + enqueue in `db.transaction`?
-3. Does the enqueue's `kind` match the table's registration in `sync_engine.dart`?
+3. Does the enqueue's `kind` match the table's registration in the sync engine?
 4. If this is a new mutation method, does the same shape carry over?
 
 If any answer is "no" — the invariant is at risk. Fix it before merging.
@@ -102,7 +103,7 @@ Schema changes affect users who already installed the app. Their data isn't disp
 If you do steps 1 + 4 without 2 + 3, existing users crash on first query against the new column/table.
 If you bump `schemaVersion` without writing the `onUpgrade` step, the version is a lie — nothing actually migrates.
 
-### The migration we already shipped (v1 → v2)
+### Migration shape
 
 ```dart
 @override
@@ -113,9 +114,10 @@ MigrationStrategy get migration => MigrationStrategy(
   onCreate: (m) => m.createAll(),                     // first install
   onUpgrade: (m, from, to) async {                    // existing install
     if (from < 2) {
-      await m.createTable(scheduledCalls);
-      await m.createTable(callLogs);
+      await m.createTable(orders);                    // a new table
+      await m.addColumn(students, students.archived); // a new nullable column
     }
+    // future versions go below as additional `if (from < N)` blocks
   },
 );
 ```
@@ -124,31 +126,7 @@ Three things to notice:
 
 - `onCreate` calls `m.createAll()` — new installs always get the current full schema, no manual list to maintain.
 - The `if (from < N)` guard is required. A user on v1 jumping straight to v3 must run both v1→v2 AND v2→v3 in one launch.
-- `schemaVersion: 2` matches the highest `if (from < N)` step. Drop one and the other is wrong.
-
-## ⚙️ Background Isolate Rules
-
-`workmanager` fires the bg callback in a **separate isolate** with no access to your main-isolate state. Treat it as a fresh process.
-
-**Hard rules for any bg callback:**
-
-1. Top-level/static function annotated `@pragma('vm:entry-point')`. Without the pragma, release-build tree-shaking deletes the function.
-2. Re-bootstrap every service from scratch — keychain → DB → dio → engine. You cannot reach into Riverpod, the main DB, or any singleton from the main isolate.
-3. Wrap the body in `try { ... } catch { return false; } finally { await db?.close(); }`. Always close the DB. Always log errors with the `[bg]` prefix.
-4. Return `true` for success, `false` to ask the OS to retry. Never let an exception escape `executeTask`.
-5. No UI calls — no `BuildContext`, no `Navigator`, no `runApp`, no `ScaffoldMessenger`.
-6. Trust the registered constraints (e.g. `NetworkType.connected`). Don't double-check.
-7. Operations must be idempotent — bg tasks can run more than once.
-8. Always set timeouts on network calls. Bg tasks have OS-imposed time limits (Android ~10min, iOS ~30s).
-
-**Common breakages:**
-
-- Capturing a foreground variable inside the callback closure — it's null in the bg isolate
-- Forgetting `await db?.close()` in `finally` — DB locks accumulate across runs
-- Removing `@pragma('vm:entry-point')` — release builds drop the function entirely
-- Adding plugins without checking bg-isolate compatibility (most need manual registration)
-
-The reference implementation lives in `core/services/background_worker.dart` — copy that shape for any future bg task.
+- `schemaVersion: N` matches the highest `if (from < N)` step. Drop one and the other is wrong.
 
 ### Migration step cheatsheet
 
@@ -178,8 +156,6 @@ Local schema is independent of the server schema. When the two get out of step:
 - **Server still sends a column the local schema dropped** → silently ignored by `fromJson`. No crash, but data is lost.
 - **Renamed column** → coordinate cross-side renames in two steps: add the new column, dual-write for one release, then drop the old.
 
-For JSONPlaceholder this is moot (no real schema). For any future real backend, this is the whole reason to run schema migrations server-side and client-side as a coordinated pair.
-
 ### Optional tooling — schema tracking
 
 Drift can dump a snapshot of the schema at each version so codegen can verify nothing drifted:
@@ -188,7 +164,187 @@ Drift can dump a snapshot of the schema at each version so codegen can verify no
 dart run drift_dev schema dump lib/core/services/database.dart drift_schemas/
 ```
 
-Not set up in this project. If you ship migration #3 and beyond, this turns "did I forget to bump the version?" from a runtime crash into a build error.
+If you ship migration #3 and beyond, this turns "did I forget to bump the version?" from a runtime crash into a build error.
+
+---
+
+## ⚙️ Background Isolate Rules
+
+`workmanager` (and equivalent background-task plugins) fires the bg callback in a **separate isolate** with no access to your main-isolate state. Treat it as a fresh process — Riverpod, the foreground DB, singletons, and globals from `main()` do not exist here.
+
+Reference implementation: `core/services/background_worker.dart`. Copy that shape for any future bg task.
+
+### Hard rules for any bg callback
+
+1. **Top-level/static function annotated `@pragma('vm:entry-point')`.** Without the pragma, release-build tree-shaking deletes the function. Workmanager invokes it by name through a platform channel — the compiler can't statically see the call.
+
+2. **Re-bootstrap every service from scratch** — keychain → DB → http client → engine. You cannot reach into Riverpod, the main DB, or any singleton from the main isolate. The redundancy with `main.dart` is unavoidable.
+
+3. **Wrap the body in `try / catch / finally`:**
+   ```dart
+   AppDatabase? db;
+   try {
+     // re-init + work
+     return true;
+   } catch (e, st) {
+     appLogger.e('[bg] failed', error: e, stackTrace: st);
+     return false;
+   } finally {
+     await db?.close();
+   }
+   ```
+   Always close the DB. Always log errors with the `[bg]` prefix. Never let an exception escape the bg callback.
+
+4. **Return `true` for success, `false` for retry-please.** Don't return `true` on a swallowed error — you'll never see retries when you need them most.
+
+5. **No UI calls.** No `BuildContext`, no `Navigator`, no `runApp`, no `ScaffoldMessenger`, no `setState`. There is no widget tree in this isolate.
+
+6. **Honor the registered constraints.** If you registered with `Constraints(networkType: NetworkType.connected)`, trust it. Don't double-check connectivity inside the callback.
+
+7. **Operations must be idempotent.** Bg tasks can run more than once if the OS kills the process mid-execution. Use opIds / fired-flags / equivalent dedup. Never write code that assumes "this only runs once."
+
+8. **Always set timeouts on network calls.** Bg tasks have OS-imposed time limits (Android ~10min, iOS BGAppRefresh ~30s). 15s `connectTimeout` / `receiveTimeout` is a sensible default.
+
+### The four common breakages
+
+1. **Capturing a foreground variable inside the callback closure** — it's null in the bg isolate. Always re-create.
+2. **Forgetting `await db?.close()` in `finally`** — DB locks accumulate across runs.
+3. **Removing `@pragma('vm:entry-point')`** — release builds drop the function entirely.
+4. **Adding plugins without checking bg-isolate compatibility** — `flutter_local_notifications`, `firebase_*`, etc. need explicit registration in the bg isolate. Read the plugin's docs before assuming it "just works."
+
+### Keychain caveat
+
+`flutter_secure_storage` with `KeychainAccessibility.first_unlock` means the keychain is **inaccessible until the user has unlocked the device once after boot**. If a bg task fires before that, the keychain read fails, the DB can't open, return `false` — the OS will retry later. This is correct behavior. Don't try to "fix" it by relaxing the keychain ACL.
+
+---
+
+## 🛠️ Codegen Workflow
+
+`build_runner` drives `drift_dev`, `freezed`, and `json_serializable`. They read annotated source files and write generated Dart files (`*.g.dart`, `*.freezed.dart`). Generated outputs are committed to git so CI doesn't have to regenerate.
+
+### What it produces
+
+You write ~15 lines of `@DriftDatabase` / table definitions; the generator produces ~500 lines per table — a typed data class, a partial-update companion, a query-metadata table-info class, the database mixin, and DAO mixins. It eliminates mechanical boilerplate you'd otherwise hand-write and bug-fix forever.
+
+### When to run
+
+After any change to an annotated class:
+
+- A column is added, removed, or renamed in a Drift table
+- A table is added or removed from `@DriftDatabase(tables: [...])`
+- `schemaVersion` is bumped (codegen confirms the schema; it does NOT write the migration — see §Drift Migrations)
+- A new `@DriftAccessor` DAO is added
+- A `@freezed` or `@JsonSerializable` class is added or changed
+- A file referenced via `part` is moved or renamed
+
+**Symptom of forgetting:** "symbol not found" errors in files that don't even reference the changed class — because the missing symbol is in a stale generated file.
+
+### The commands
+
+```bash
+dart run build_runner build                                # 95% of cases
+dart run build_runner build --delete-conflicting-outputs   # after rename/move
+dart run build_runner watch                                # active local dev
+dart run build_runner clean                                # nuke generated state
+```
+
+`watch` is for development only — never use it in CI.
+
+### Generated `.g.dart` files are `part of` their source
+
+```dart
+// database.dart
+part 'database.g.dart';
+
+@DriftDatabase(...)
+class AppDatabase extends _$AppDatabase { ... }
+```
+
+The `.g.dart` is **merged into the same library** as the source. That means:
+
+- Generated row classes (e.g., `Student`, `Order`), companions (`StudentsCompanion`), and `_$AppDatabase` all live in `database.g.dart` — but to use them, **import `database.dart`** (the file with the matching `part` directive). Never import the `.g.dart` directly.
+- Same for every DAO mixin and every generated row class.
+
+This trips up agents the most. The data class lives in the `.g.dart` part-file, but it's accessed via the source file's import.
+
+### Hard rules
+
+- ❌ **Never edit `*.g.dart` or `*.freezed.dart` files** — they're regenerated; your edit is overwritten on the next build. Fix the annotated source instead.
+- ❌ **Never import a `.g.dart` directly** — import the source file with the matching `part 'X.g.dart';` directive.
+- ✅ **Commit regenerated files alongside the source change.** Source-only commits break CI and produce stale builds for teammates.
+- ✅ `analysis_options.yaml` excludes `*.g.dart` and `*.freezed.dart` from analysis. Don't add `// ignore:` to a generated file — it isn't being analyzed.
+- ✅ **Codegen and migrations are independent.** Adding a column needs both: `build_runner` (so the class has the field) AND a migration step in `onUpgrade` (so existing users' DBs get the column). See §Drift Migrations.
+
+### Common mistakes
+
+1. **"Class X not found" after editing a table** — forgot to run `build_runner`.
+2. **Editing `database.g.dart` to "just fix a typo"** — overwritten on the next build. Fix the annotated source class.
+3. **Committing source changes without regenerating** — CI regenerates, gets different output, fails.
+4. **Reaching for `--delete-conflicting-outputs` on every build** — it's not destructive but it trains the wrong instinct. Only use it after renaming or moving files.
+5. **Forgetting that codegen ≠ migration** — `build_runner` updates the schema in code; existing user DBs only update via `onUpgrade`.
+
+---
+
+## 🕐 Time
+
+Persist time as UTC (`DateTime.now().toUtc()`); display as local (`.toLocal()`). Keeps DST transitions and any future multi-device sync from corrupting sort order.
+
+---
+
+## 📝 Logging
+
+- Use `appLogger` (the `logger` package). Never `print()`.
+- Background-isolate logs are prefixed `[bg]` so foreground/background activity is distinguishable in `adb logcat` / Console.
+- Never log PII or sensitive data — no emails, no auth tokens, no raw payload bodies, no passwords.
+- Surface meaningful sync metrics: queued op count, last successful sync timestamp, error rate. These are what you'll grep when something breaks in production.
+
+---
+
+## 🌐 Server Contract
+
+The sync engine expects a specific HTTP contract from any backend. The shape of these endpoints is not negotiable — break the contract and sync silently desyncs.
+
+### Endpoints (per synced `kind`)
+
+- `GET /{kind}` — pull delta. Query: `updatedSince` (ISO8601 UTC), `limit`, `pageToken`, `includeDeleted`. Response: `{ "items": [...], "nextPageToken": string|null }`.
+- `POST /{kind}` — create. Body is the entity. Response: 201 with the saved record (including server-assigned `id` and `updatedAt`).
+- `PUT /{kind}/{id}` — update. Body includes `_baseUpdatedAt`. Server returns 200 on success, **409 with `{ "current": {...} }`** when local base is stale, 404 when not found.
+- `DELETE /{kind}/{id}` — soft-delete. Returns 204.
+- `GET /{kind}/{id}` — fetch one (used for conflict resolution).
+
+Optional but recommended:
+
+- `POST /batch` — apply many ops in one round-trip (perf optimization).
+- `GET /health` — liveness check.
+
+### Rules the server must follow
+
+- Every record has `updatedAt` set by the server, UTC ISO8601 with `Z` suffix. Monotonic on writes.
+- Soft-delete via a `deletedAt` field — never hard-delete in a synced table (clients can't mirror a hard delete).
+- Honor `X-Idempotency-Key` headers — dedup by `opId` on push retries (the client retries pushes whose responses were lost; without dedup, the server creates duplicates).
+- Return 409 (with `{ "current": {...} }`) on optimistic-concurrency mismatch — never silently accept a stale write.
+- Server clock is UTC. Clock drift causes the same problems as client local-time leaks.
+
+### Common server-side mistakes that break sync silently
+
+- Returning a bare array instead of `{items, nextPageToken}` envelope
+- Omitting `updatedAt` — cursor never advances, every pull re-fetches everything
+- Returning 200 instead of 409 on a conflict — client thinks push succeeded; data drifts
+- Ignoring `updatedSince` and returning everything every time — perf collapses, bandwidth wasted
+- Hard-deleting in synced tables — clients have no way to mirror the delete
+
+### Audit checklist when introducing a real backend
+
+1. Pull endpoint returns `{items, nextPageToken}`, never a bare array
+2. Every record carries `updatedAt` in UTC ISO8601 with `Z`
+3. Soft-deletes supported with `deletedAt`
+4. `updatedSince` actually filters
+5. `PUT` honors `_baseUpdatedAt` and responds 409 on mismatch
+6. Server dedups by `X-Idempotency-Key`
+7. `DELETE` returns 204
+8. Server clock is UTC
+
+If any answer is "no" or "we don't do that yet," sync will not work correctly until the server is fixed. Symptoms of a broken contract are silent — drift accumulates over time without crashes.
 
 ---
 
@@ -202,13 +358,14 @@ lib/
   app.dart                         # Root widget, theme, router
   core/
     services/
-      api_client.dart              # Dio setup + cache interceptor
+      api_client.dart              # HTTP client setup + cache interceptor
       database.dart                # Drift + SQLCipher initialization
       sync_engine.dart             # Sync agent wrapper
       connectivity_service.dart    # Network status watcher
       secure_storage.dart          # Encryption key + token storage
+      background_worker.dart       # workmanager callback dispatcher
     constants/
-      app_constants.dart           # Strings, durations, limits
+      app_constants.dart           # Strings, durations, limits (k-prefixed top-level)
     utils/
       extensions.dart              # Dart extension methods
       logger.dart                  # App-wide logging utility
@@ -222,16 +379,16 @@ lib/
       presentation/
         pages/                     # Full screens
         widgets/                   # Feature-specific UI pieces
-        controllers/               # Riverpod notifiers or Cubits
+        controllers/               # Riverpod providers and notifiers
       domain/
-        entities/                  # Plain Dart objects (freezed)
+        entities/                  # Plain Dart objects (freezed) — optional
         usecases/                  # One class, one action
       data/
-        models/                    # JSON-serializable DTOs
+        models/                    # JSON-serializable DTOs (when needed)
         local/                     # Drift tables + DAOs
-        remote/                    # API service classes
+        remote/                    # API service classes / DTO mappers
         repositories/              # Combines local + remote
-test/                              # Mirrors lib/ structure — add later
+test/                              # Mirrors lib/ structure
 ```
 
 **Rules:**
@@ -249,15 +406,18 @@ Only use packages from this list unless there is a strong reason to add a new on
 
 | Purpose | Package |
 |---|---|
-| Local DB | `drift` + `sqlite3_flutter_libs` |
-| DB Encryption | `sqflite_sqlcipher` |
+| Local DB | `drift` + `sqlite3` (v3.x) |
+| DB Encryption | `sqlite3` with `sqlite3mc` build hook (or `sqflite_sqlcipher`) |
 | Sync Agent | `offline_first_sync_drift` + REST adapter |
 | State Management | `flutter_riverpod` |
 | HTTP | `dio` + `dio_cache_interceptor` |
-| Connectivity | `connectivity_plus` + `flutter_offline` |
+| Connectivity | `connectivity_plus` |
 | Secure Storage | `flutter_secure_storage` |
 | Code Generation | `freezed` + `json_serializable` + `build_runner` |
 | Background Tasks | `workmanager` |
+| Path | `path_provider` + `path` |
+| Identifiers | `uuid` |
+| Logging | `logger` |
 
 > **Do not add** packages that duplicate existing ones. Check `pubspec.yaml` before suggesting a new dependency.
 
@@ -303,7 +463,7 @@ class _State extends State<StudentListPage> {
 
 ### State Management (Riverpod 3.x)
 
-Riverpod is the **only** state-management primitive in this app. Don't introduce Bloc, GetX, MobX, or `package:provider`.
+Riverpod is the **only** state-management primitive. Don't introduce Bloc, GetX, MobX, or `package:provider`.
 
 #### Pick the right provider type
 
@@ -326,8 +486,8 @@ If the provider just **reads** something from the repository → plain provider,
 
 ```dart
 // ✅ Just exposing a stream — no Notifier needed
-final contactsListProvider = StreamProvider<List<Contact>>((ref) {
-  return ref.watch(contactsRepositoryProvider).watchAll();
+final studentListProvider = StreamProvider<List<Student>>((ref) {
+  return ref.watch(studentRepositoryProvider).watchAll();
 });
 ```
 
@@ -335,18 +495,18 @@ If the screen needs to **trigger mutations** that affect this state → write a 
 
 ```dart
 // ✅ Mutations live on a Notifier
-class ContactList extends AsyncNotifier<List<Contact>> {
+class StudentList extends AsyncNotifier<List<Student>> {
   @override
-  Future<List<Contact>> build() => ref.watch(contactsRepositoryProvider).watchAll().first;
+  Future<List<Student>> build() => ref.watch(studentRepositoryProvider).watchAll().first;
 
-  Future<void> add(Contact c) async {
+  Future<void> add(Student s) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(contactsRepositoryProvider).upsert(c));
+    state = await AsyncValue.guard(() => ref.read(studentRepositoryProvider).upsert(s));
   }
 }
 ```
 
-In *this* app, mutations usually go through use-cases (`ref.read(upsertContactProvider).call(...)`), so most pages don't need a Notifier — they `ref.watch` a `StreamProvider` for display and `ref.read` a use-case on button taps. Only reach for a Notifier when the screen has its own state machine to manage.
+If mutations go through use-cases (`ref.read(saveStudentProvider).call(...)`), most pages don't need a Notifier — they `ref.watch` a `StreamProvider` for display and `ref.read` a use-case on button taps. Only reach for a Notifier when the screen has its own state machine to manage.
 
 #### `ref.watch` / `ref.read` / `ref.listen`
 
@@ -364,12 +524,12 @@ In *this* app, mutations usually go through use-cases (`ref.read(upsertContactPr
 
 ```dart
 // ✅ Good
-class ContactsListPage extends ConsumerWidget {
+class StudentListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final contacts = ref.watch(contactsListProvider);  // reactive read
+    final students = ref.watch(studentListProvider);  // reactive read
 
-    ref.listen(syncStatusProvider, (prev, next) {       // side effect on change
+    ref.listen(syncStatusProvider, (prev, next) {     // side effect on change
       if (next.value is SyncStatusError) {
         ScaffoldMessenger.of(context).showSnackBar(...);
       }
@@ -377,13 +537,13 @@ class ContactsListPage extends ConsumerWidget {
 
     return FloatingActionButton(
       onPressed: () =>
-          ref.read(upsertContactProvider).call(...),    // one-shot action
+          ref.read(saveStudentProvider).call(...),    // one-shot action
     );
   }
 }
 
 // ❌ Bad — ref.read in build()
-final contacts = ref.read(contactsListProvider);  // won't rebuild on change
+final students = ref.read(studentListProvider);  // won't rebuild on change
 ```
 
 #### Reduce rebuilds with `ref.select`
@@ -391,7 +551,7 @@ final contacts = ref.read(contactsListProvider);  // won't rebuild on change
 When a widget only cares about **one field** of a larger value:
 
 ```dart
-// ❌ Rebuilds when any field of DbStats changes
+// ❌ Rebuilds when any field of stats changes
 final stats = ref.watch(dbStatsProvider);
 return Text('${stats.value?.activeCount ?? 0}');
 
@@ -424,14 +584,14 @@ Why throw rather than construct lazily?
 
 ```dart
 // ✅ Each provider has one job; widgets compose them
-final contactByIdProvider = FutureProvider.family<Contact?, String>((ref, id) {
-  return ref.watch(contactsRepositoryProvider).findById(id);
+final studentByIdProvider = FutureProvider.family<Student?, String>((ref, id) {
+  return ref.watch(studentRepositoryProvider).findById(id);
 });
 
 // ❌ Bad — one provider returning a tuple
-final contactScreenStateProvider = Provider((ref) {
+final studentScreenStateProvider = Provider((ref) {
   return (
-    ref.watch(contactByIdProvider(id)),
+    ref.watch(studentByIdProvider(id)),
     ref.watch(isOnlineProvider),
     ref.watch(pendingCountProvider),
   );
@@ -454,7 +614,7 @@ The widget composes the screen state by watching the small providers it actually
 
 #### Naming
 
-- Providers: `featureNameProvider` (`contactsListProvider`, `syncStatusProvider`).
+- Providers: `featureNameProvider` (`studentListProvider`, `syncStatusProvider`).
 - For platform services exposing a class instance, type-suffix is fine: `appDatabaseProvider`, `connectivityServiceProvider`.
 - Avoid generic names: `dataProvider`, `stateProvider`.
 
@@ -475,29 +635,30 @@ The widget composes the screen state by watching the small providers it actually
 - Reads from local DB first, always
 - Writes go to local DB first, then sync queue handles the rest
 - Exposes `Stream<T>` for lists, `Future<T?>` for single items
-- No Dio calls directly — delegates to a remote service class
+- No HTTP calls directly — delegates to a remote service class or sync transport
 
 ```dart
 // ✅ Good pattern
 class StudentRepository {
-  final StudentDao _local;
-  final StudentRemoteService _remote;
-  final SyncEngine _sync;
+  StudentRepository({required this.db, required this.dao});
 
-  Stream<List<Student>> watchAll() => _local.watchAll();
+  final AppDatabase db;
+  final StudentDao dao;
+
+  Stream<List<Student>> watchAll() => dao.watchAll();
+
+  Future<Student?> findById(String id) => dao.findById(id);
 
   Future<void> save(Student student) async {
-    // Write locally + queue sync — one transaction
-    await _local.upsertWithSyncEvent(student);
-  }
-
-  Future<void> refreshFromServer() async {
-    try {
-      final remoteData = await _remote.fetchAll();
-      await _local.upsertAll(remoteData);
-    } catch (_) {
-      // Silent fail — local data still serves the UI
-    }
+    // Outbox invariant: write + enqueue in one transaction
+    await db.transaction(() async {
+      await dao.upsert(student);
+      await db.enqueue(UpsertOp.create(
+        kind: kStudentsKind,
+        id: student.id,
+        payloadJson: student.toJson(),
+      ));
+    });
   }
 }
 ```
@@ -507,7 +668,7 @@ class StudentRepository {
 - One DAO per feature/entity
 - Use `watch()` methods to return `Stream<T>`
 - Always use transactions when writing multiple tables
-- Name methods clearly: `watchAll`, `findById`, `upsert`, `deleteById`
+- Name methods clearly: `watchAll`, `findById`, `upsert`, `markDeletedLocal`, `removeById`
 
 ```dart
 // ✅ Good
@@ -515,17 +676,20 @@ class StudentRepository {
 class StudentDao extends DatabaseAccessor<AppDatabase> with _$StudentDaoMixin {
   StudentDao(AppDatabase db) : super(db);
 
-  Stream<List<StudentData>> watchAll() => select(students).watch();
+  Stream<List<Student>> watchAll() => select(students).watch();
 
-  Future<void> upsert(StudentsCompanion entry) =>
+  Future<Student?> findById(String id) =>
+      (select(students)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Future<int> upsert(Student entry) =>
       into(students).insertOnConflictUpdate(entry);
 }
 ```
 
 ### Sync Agent
 
-- Runs in background via `workmanager`
-- Reads from `sync_queue` table, sends batches to server
+- Runs in background via `workmanager` (and on a foreground timer / connectivity listener while app is open)
+- Reads from `sync_outbox` table, sends batches to server
 - Applies server deltas back into local DB
 - Never blocks the UI thread
 
@@ -536,17 +700,24 @@ class StudentDao extends DatabaseAccessor<AppDatabase> with _$StudentDaoMixin {
 **Reading data:**
 
 ```
-UI (watch provider) → Notifier → Repository → Drift DAO → Stream<T> → UI updates
-                                                         ↓ (if online)
-                                               Remote service refreshes DB in background
+UI (watch provider) → Repository → Drift DAO → Stream<T> → UI updates
+                                  ↓ (if online)
+                        Sync engine refreshes DB in background
 ```
 
 **Writing data:**
 
 ```
-UI action → Notifier.method() → Repository.save() → DAO writes locally + adds to sync_queue
-                                                  → UI updates immediately via stream
-                                                  → Sync agent picks up queue later
+UI action → use-case / notifier → Repository.save()
+                                ↓
+                                db.transaction {
+                                  DAO writes locally
+                                  + db.enqueue(syncOp)
+                                }
+                                ↓
+                                UI updates immediately via stream
+                                ↓
+                                Sync engine drains outbox later
 ```
 
 ---
@@ -558,23 +729,25 @@ UI action → Notifier.method() → Repository.save() → DAO writes locally + a
 - Files: `snake_case.dart`
 - Classes: `PascalCase`
 - Variables & methods: `camelCase`
-- Constants: `kConstantName` or `SCREAMING_SNAKE` in `app_constants.dart`
+- Constants: `kConstantName` top-level in `app_constants.dart` (or `SCREAMING_SNAKE` if you prefer; pick one and stick with it)
 - Providers: `featureNameProvider` (e.g. `studentListProvider`)
 
 ### General
 
 - Max **500 lines per file**. If a file hits 500 lines — stop and split it immediately.
-- Max **5 lines per function**. If a function grows beyond 5 lines — extract the extra logic into a helper function with a clear name.
+- Max **5 lines per function** for non-build, non-trivial logic. If a function grows beyond 5 lines — extract the extra logic into a helper function with a clear name. (Build methods are exempt.)
 - Prefer named parameters for functions with 2+ args
 - Always handle `null` explicitly — avoid `!` unless you're 100% sure
 - Use `const` wherever possible
-- Avoid deeply nested widgets — extract to named widget methods or separate widget classes
+- Avoid deeply nested widgets — extract to named widget classes (never widget-returning helper methods)
 
 ```dart
 // ✅ Good — function under 5 lines
 Future<void> saveStudent(Student student) async {
-  await _local.upsert(student.toCompanion());
-  await _sync.enqueue(SyncEvent.upsert(student.id));
+  await db.transaction(() async {
+    await dao.upsert(student);
+    await db.enqueue(_opFor(student));
+  });
 }
 
 // ❌ Bad — function doing too much, way over 5 lines
@@ -584,20 +757,22 @@ Future<void> saveStudent(Student student) async {
     name: Value(student.name),
     // ... 10 more fields
   );
-  await _local.upsert(companion);
+  await dao.upsert(companion);
   final event = SyncEvent(entityId: student.id, action: 'upsert', table: 'students', createdAt: DateTime.now());
-  await _syncQueue.insert(event);
+  await syncQueue.insert(event);
   log.info('Student saved and queued: ${student.id}');
 }
 
 // ✅ Fix — split into helpers
 Future<void> saveStudent(Student student) async {
-  await _local.upsert(student.toCompanion());
-  await _queueSyncEvent(student.id);
+  await db.transaction(() async {
+    await dao.upsert(student);
+    await _enqueueSync(student.id);
+  });
 }
 
-Future<void> _queueSyncEvent(String id) async {
-  await _syncQueue.insert(SyncEvent.upsert(id, table: 'students'));
+Future<void> _enqueueSync(String id) async {
+  await db.enqueue(UpsertOp.create(kind: kStudentsKind, id: id, payloadJson: ...));
   log.info('Queued sync for: $id');
 }
 ```
@@ -605,13 +780,12 @@ Future<void> _queueSyncEvent(String id) async {
 ### Widget Splitting Rules
 
 - A widget file must not exceed **500 lines**. Split it when it gets close.
-- If a widget has more than **one distinct visual section**, each section becomes its own widget class in its own file.
+- If a widget has more than **one distinct visual section**, each section becomes its own widget class.
 - Never build large trees inline — extract every meaningful chunk into a named widget.
 - Name extracted widgets descriptively: `StudentCard`, `EmptyStudentList`, `SyncStatusBanner` — not `_Widget1` or `_Helper`.
 
 ```dart
 // ✅ Good — split into small focused widgets
-// student_list_page.dart
 class StudentListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -626,9 +800,6 @@ class StudentListPage extends ConsumerWidget {
     );
   }
 }
-// student_list.dart         — just the list
-// empty_student_list.dart   — just the empty state
-// student_list_app_bar.dart — just the app bar
 
 // ❌ Bad — everything crammed into one build method
 @override
@@ -681,27 +852,27 @@ Pick where a widget lives by **how widely it is reused** — not by guessing fut
 
 ```dart
 // ✅ Tier 1 — single page, inline private class
-// In sync_center_page.dart
-class SyncCenterPage extends ConsumerWidget { ... }
-class _StatusCard extends StatelessWidget { ... }   // private to this file
-class _OpTile extends StatelessWidget { ... }       // private to this file
+// In student_detail_page.dart
+class StudentDetailPage extends ConsumerWidget { ... }
+class _StudentHeader extends StatelessWidget { ... }   // private to this file
+class _StudentInfoCard extends StatelessWidget { ... } // private to this file
 
-// ✅ Tier 2 — used by multiple pages in the contacts feature
-// features/contacts/presentation/widgets/contact_tile.dart
-class ContactTile extends StatelessWidget { ... }
+// ✅ Tier 2 — used by multiple pages in the students feature
+// features/students/presentation/widgets/student_tile.dart
+class StudentTile extends StatelessWidget { ... }
 
-// ✅ Tier 3 — used by contacts + auto_call + stats pages
+// ✅ Tier 3 — used across multiple features
 // core/widgets/loading_widget.dart
 class LoadingWidget extends StatelessWidget { ... }
 
 // ❌ Bad — generic widget hidden inside one feature
-// features/contacts/presentation/widgets/loading_widget.dart  ← belongs in core/widgets/
+// features/students/presentation/widgets/loading_widget.dart  ← belongs in core/widgets/
 ```
 
 **Always prefer a private class over a private build method:**
 
 ```dart
-// ❌ Bad — Widget-returning function
+// ❌ Bad — widget-returning function
 Widget _buildHeader(BuildContext context) { ... }
 
 // ✅ Good — private widget class
@@ -741,20 +912,20 @@ The 500-line rule wins over the "keep private widgets inline" rule. When a Tier 
 If neither applies, create a subfolder named after the page:
 
 ```
-features/contacts/presentation/pages/
-  contacts_list/                              ← page-scoped folder
-    contacts_list_page.dart                   ← the page itself
-    contacts_list_search_bar.dart             ← was _SearchBar
-    contacts_list_empty_state.dart            ← was _EmptyState
-    contacts_list_pinned_section.dart         ← was _PinnedSection
+features/students/presentation/pages/
+  student_detail/                              ← page-scoped folder
+    student_detail_page.dart                   ← the page itself
+    student_detail_header.dart                 ← was _Header
+    student_detail_info_card.dart              ← was _InfoCard
+    student_detail_actions.dart                ← was _Actions
 ```
 
 **Rules for the page subfolder:**
 
-- Filenames prefixed with the page name (`contacts_list_*`) so flat-search makes ownership obvious
-- Classes become public (`SearchBar` instead of `_SearchBar`) — Dart can't share private classes across files without `part of`
-- **Convention only:** nothing outside this folder imports from inside it. The folder is the encapsulation boundary, even though Dart can't enforce it
-- If something in the subfolder later gets imported by another page — that's the Tier 2 promotion signal. Move it up to `presentation/widgets/`
+- Filenames prefixed with the page name (`student_detail_*`) so flat-search makes ownership obvious
+- Classes become public (`Header` → `StudentDetailHeader`) — Dart can't share private classes across files without `part of`
+- **Convention only:** nothing outside this folder imports from inside it. The folder is the encapsulation boundary, even though Dart can't enforce it.
+- If something in the subfolder later gets imported by another page — that's the Tier 2 promotion signal. Move it up to `presentation/widgets/`.
 
 **Decision flow for an oversized Tier 1 page:**
 
@@ -779,9 +950,9 @@ Page file approaching 500 lines.
 ```dart
 // ✅ Good
 try {
-  await _remote.push(events);
+  await syncEngine.syncNow();
 } catch (e, stack) {
-  log.error('Sync push failed', error: e, stackTrace: stack);
+  appLogger.e('Sync push failed', error: e, stackTrace: stack);
   // Will retry next cycle — no need to crash or alert user
 }
 ```
@@ -793,8 +964,8 @@ try {
 - **Never** hardcode API keys, secrets, or passwords
 - Store encryption key and tokens only in `flutter_secure_storage`
 - Always use HTTPS
-- Encrypt the local DB with SQLCipher
-- Never log sensitive user data
+- Encrypt the local DB (SQLCipher or sqlite3mc with `PRAGMA key`)
+- Never log sensitive user data (emails, tokens, raw payloads, PII)
 
 ---
 
@@ -802,16 +973,20 @@ try {
 
 | Never | Why |
 |---|---|
-| Put API calls directly in widgets | Breaks separation of concerns |
+| Put HTTP calls directly in widgets | Breaks separation of concerns |
 | Skip local DB write and only write to server | Breaks offline-first guarantee |
+| Skip the outbox enqueue when writing to a synced table | Breaks the sync invariant |
 | Use `setState` for app-level state | Use Riverpod instead |
 | Create a new package for something already in the list | Bloats dependencies |
-| Use `Future<void>` where a `Stream` would be better | Kills reactivity |
+| Use `Future<T>` where a `Stream<T>` would be better | Kills reactivity |
 | Duplicate a model, DAO, or service that already exists | Breaks DRY principle |
 | Use `dynamic` types | Kills type safety |
-| Write a function longer than 5 lines without splitting | Hard to read and test |
+| Write a non-build function longer than 5 lines without splitting | Hard to read and test |
 | Let a file grow past 500 lines without splitting | Becomes unmaintainable |
 | Build a long widget tree inline instead of extracting widgets | Impossible to scan and reuse |
+| Edit a `*.g.dart` or `*.freezed.dart` file directly | Overwritten on next build |
+| Bump `schemaVersion` without writing the corresponding `onUpgrade` step | Existing users crash on first query |
+| Persist `DateTime.now()` without `.toUtc()` | Local-time leaks corrupt sort order |
 | Leave `TODO` comments in committed code | Finish it or file an issue |
 
 ---
@@ -820,12 +995,13 @@ try {
 
 1. Does this feature already exist somewhere? Check `features/` first.
 2. Is there a shared utility in `core/` I should reuse?
-3. Am I writing to local DB first before any network call?
+3. If I'm writing to a synced table — is the write going through a repository, inside `db.transaction`, with an outbox enqueue?
 4. Am I returning a `Stream` from the repository for reactive UI?
-5. Have I added a sync queue event for every write?
-6. Is every function ≤5 lines? If not — extract helpers now, not later.
+5. If I changed a Drift table — did I bump `schemaVersion`, write the `onUpgrade` step, and run `build_runner`?
+6. Is every non-build function ≤5 lines? If not — extract helpers now, not later.
 7. Is this file under 500 lines? If not — split it before committing.
 8. If this is a widget file — have I extracted every distinct section into its own named widget?
+9. If this is a background-isolate function — does it have `@pragma('vm:entry-point')`, re-bootstrap services, and close the DB in `finally`?
 
 ---
 
@@ -839,4 +1015,4 @@ try {
 
 ---
 
-*Last updated: project bootstrap. Update this file as the project evolves.*
+*Update this file as the project evolves.*
