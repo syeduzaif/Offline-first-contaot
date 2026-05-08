@@ -192,6 +192,18 @@ Not set up in this project. If you ship migration #3 and beyond, this turns "did
 
 ---
 
+## 📝 Logging
+
+_TBD — to discuss before drafting._
+
+---
+
+## 🌐 Server Contract
+
+_TBD — to discuss before drafting._
+
+---
+
 ## 📁 Project Structure
 
 Always follow this structure. Do not deviate without a good reason.
