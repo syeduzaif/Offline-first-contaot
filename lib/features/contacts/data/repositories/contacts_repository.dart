@@ -39,12 +39,9 @@ class ContactsRepository {
     String? zipcode,
     String? companyName,
   }) async {
-    final now = DateTime.now().toUtc();
-    final isNew = id == null;
     final entityId = id ?? _uuid.v4();
-
-    final existing = isNew ? null : await dao.findById(entityId);
-    final contact = Contact(
+    final existing = id == null ? null : await dao.findById(entityId);
+    final contact = _buildContact(
       id: entityId,
       name: name,
       username: username,
@@ -56,38 +53,78 @@ class ContactsRepository {
       city: city,
       zipcode: zipcode,
       companyName: companyName,
-      updatedAt: now,
-      deletedAt: existing?.deletedAt,
-      deletedAtLocal: null,
+      existing: existing,
     );
-
-    await db.transaction(() async {
-      await dao.upsert(contact);
-      await db.enqueue(
-        UpsertOp.create(
-          kind: AppConstants.contactsKind,
-          id: entityId,
-          payloadJson: contact.toJson(),
-          baseUpdatedAt: existing?.updatedAt,
-        ),
-      );
-    });
-
+    await _writeAndEnqueueUpsert(contact, baseUpdatedAt: existing?.updatedAt);
     return contact;
   }
 
   Future<void> delete(String id) async {
-    final now = DateTime.now().toUtc();
     final existing = await dao.findById(id);
     if (existing == null) return;
+    await _writeAndEnqueueDelete(id, baseUpdatedAt: existing.updatedAt);
+  }
 
-    await db.transaction(() async {
-      await dao.markDeletedLocal(id, now);
+  Contact _buildContact({
+    required String id,
+    required String name,
+    required String email,
+    String? username,
+    String? phone,
+    String? website,
+    String? street,
+    String? suite,
+    String? city,
+    String? zipcode,
+    String? companyName,
+    Contact? existing,
+  }) {
+    return Contact(
+      id: id,
+      name: name,
+      username: username,
+      email: email,
+      phone: phone,
+      website: website,
+      street: street,
+      suite: suite,
+      city: city,
+      zipcode: zipcode,
+      companyName: companyName,
+      updatedAt: DateTime.now().toUtc(),
+      deletedAt: existing?.deletedAt,
+      deletedAtLocal: null,
+    );
+  }
+
+  Future<void> _writeAndEnqueueUpsert(
+    Contact contact, {
+    DateTime? baseUpdatedAt,
+  }) {
+    return db.transaction(() async {
+      await dao.upsert(contact);
+      await db.enqueue(
+        UpsertOp.create(
+          kind: kContactsKind,
+          id: contact.id,
+          payloadJson: contact.toJson(),
+          baseUpdatedAt: baseUpdatedAt,
+        ),
+      );
+    });
+  }
+
+  Future<void> _writeAndEnqueueDelete(
+    String id, {
+    required DateTime baseUpdatedAt,
+  }) {
+    return db.transaction(() async {
+      await dao.markDeletedLocal(id, DateTime.now().toUtc());
       await db.enqueue(
         DeleteOp.create(
-          kind: AppConstants.contactsKind,
+          kind: kContactsKind,
           id: id,
-          baseUpdatedAt: existing.updatedAt,
+          baseUpdatedAt: baseUpdatedAt,
         ),
       );
     });

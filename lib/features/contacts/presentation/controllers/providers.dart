@@ -6,7 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/services/database.dart';
 import '../../../../core/services/jsonplaceholder_transport.dart';
-import '../../../../core/services/sync_engine_service.dart';
+import '../../../../core/services/sync_engine.dart';
 import '../../data/local/contacts_dao.dart';
 import '../../data/repositories/contacts_repository.dart';
 import '../../domain/usecases/delete_contact.dart';
@@ -86,7 +86,7 @@ final syncStatusProvider = StreamProvider<SyncStatus>((ref) {
 final dioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(
-      baseUrl: AppConstants.apiBaseUrl,
+      baseUrl: kApiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),

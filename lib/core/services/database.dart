@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase with SyncDatabaseMixin {
 
   static Future<AppDatabase> openEncrypted(String passphrase) async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, AppConstants.dbFileName));
+    final file = File(p.join(dir.path, kDbFileName));
     final executor = NativeDatabase.createInBackground(
       file,
       setup: (rawDb) => _applyKey(rawDb, passphrase),

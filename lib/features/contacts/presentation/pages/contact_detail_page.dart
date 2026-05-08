@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/database.dart';
+import '../../../../core/widgets/loading_widget.dart';
 import '../../../auto_call/presentation/pages/schedule_call_page.dart';
 import '../../../auto_call/presentation/widgets/quick_dial_button.dart';
 import '../controllers/providers.dart';
@@ -65,7 +66,7 @@ class ContactDetailPage extends ConsumerWidget {
           }
           return _DetailBody(contact: c);
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LoadingWidget(),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );

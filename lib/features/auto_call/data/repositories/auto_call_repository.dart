@@ -1,13 +1,12 @@
 import 'package:offline_first_sync_drift/offline_first_sync_drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/database.dart';
 import '../../../../core/utils/logger.dart';
 import '../local/call_log_dao.dart';
 import '../local/scheduled_calls_dao.dart';
 import '../services/dialer_service.dart';
-
-const String _kindCallLogs = 'call_logs';
 
 /// Gatekeeper for the auto_call feature. Mirrors `ContactsRepository`'s
 /// pattern: writes happen inside a single Drift transaction that groups
@@ -44,17 +43,12 @@ class AutoCallRepository {
     required DateTime runAt,
     String? reason,
   }) async {
-    final now = DateTime.now().toUtc();
-    final row = ScheduledCall(
-      id: _uuid.v4(),
+    final row = _newScheduledCall(
       contactId: contactId,
       contactName: contactName,
       phone: phone,
       runAt: runAt,
       reason: reason,
-      createdAt: now,
-      firedAt: null,
-      outcome: null,
     );
     await scheduledCallsDao.upsert(row);
     return row;
@@ -62,8 +56,7 @@ class AutoCallRepository {
 
   Future<void> cancel(String id) async {
     final existing = await scheduledCallsDao.findById(id);
-    if (existing == null) return;
-    if (existing.firedAt != null) return; // already fired, nothing to cancel
+    if (existing == null || existing.firedAt != null) return;
     await scheduledCallsDao.markFired(
       id: id,
       firedAt: DateTime.now().toUtc(),
@@ -71,7 +64,7 @@ class AutoCallRepository {
     );
   }
 
-  /// Open the dialer for a manual call. On success, records a CallLog
+  /// Open the dialer for a manual call. On success records a CallLog
   /// row and enqueues it for sync.
   Future<bool> placeCallNow({
     required String contactId,
@@ -84,63 +77,75 @@ class AutoCallRepository {
       appLogger.w('Dialer refused/failed for $phone');
       return false;
     }
-    await _recordCallLog(
-      contactId: contactId,
-      contactName: contactName,
-      phone: phone,
-      origin: origin,
-    );
+    await db.transaction(() => _insertCallLogAndEnqueue(
+          contactId: contactId,
+          contactName: contactName,
+          phone: phone,
+          origin: origin,
+        ));
     return true;
   }
 
-  /// Fire any scheduled calls whose runAt has passed. For each due row:
-  /// open the dialer (best-effort), record a call_log entry, mark the
-  /// scheduled call as fired with outcome 'placed' (or 'missed' if the
-  /// dialer refused). All of this is transactional per row.
-  Future<int> fireDueScheduledCalls({DateTime? now, bool openDialer = true}) async {
+  /// Fire any scheduled calls whose runAt has passed. Per row: try the
+  /// dialer (when allowed), record a call_log entry on success, then
+  /// mark the scheduled row as fired — all transactionally.
+  Future<int> fireDueScheduledCalls({
+    DateTime? now,
+    bool openDialer = true,
+  }) async {
     final due = await scheduledCallsDao.findDue(now: now);
-    var firedCount = 0;
     for (final row in due) {
-      var outcome = 'missed';
-      if (openDialer) {
-        final placed = await _dialer.dial(row.phone);
-        outcome = placed ? 'placed' : 'missed';
-      }
-
-      await db.transaction(() async {
-        if (outcome == 'placed') {
-          await _insertCallLogAndEnqueue(
-            contactId: row.contactId,
-            contactName: row.contactName,
-            phone: row.phone,
-            origin: 'scheduled',
-          );
-        }
-        await scheduledCallsDao.markFired(
-          id: row.id,
-          firedAt: DateTime.now().toUtc(),
-          outcome: outcome,
-        );
-      });
-      firedCount++;
+      await _fireOne(row, openDialer: openDialer);
     }
-    return firedCount;
+    return due.length;
   }
 
-  Future<void> _recordCallLog({
+  Future<void> _fireOne(ScheduledCall row, {required bool openDialer}) async {
+    final outcome = await _resolveOutcome(row, openDialer: openDialer);
+    await db.transaction(() async {
+      if (outcome == 'placed') {
+        await _insertCallLogAndEnqueue(
+          contactId: row.contactId,
+          contactName: row.contactName,
+          phone: row.phone,
+          origin: 'scheduled',
+        );
+      }
+      await scheduledCallsDao.markFired(
+        id: row.id,
+        firedAt: DateTime.now().toUtc(),
+        outcome: outcome,
+      );
+    });
+  }
+
+  Future<String> _resolveOutcome(
+    ScheduledCall row, {
+    required bool openDialer,
+  }) async {
+    if (!openDialer) return 'missed';
+    final placed = await _dialer.dial(row.phone);
+    return placed ? 'placed' : 'missed';
+  }
+
+  ScheduledCall _newScheduledCall({
     required String contactId,
     required String contactName,
     String? phone,
-    required String origin,
-  }) async {
-    await db.transaction(() async {
-      await _insertCallLogAndEnqueue(
-        contactId: contactId,
-        contactName: contactName,
-        phone: phone,
-        origin: origin,
-      );
-    });
+    required DateTime runAt,
+    String? reason,
+  }) {
+    return ScheduledCall(
+      id: _uuid.v4(),
+      contactId: contactId,
+      contactName: contactName,
+      phone: phone,
+      runAt: runAt,
+      reason: reason,
+      createdAt: DateTime.now().toUtc(),
+      firedAt: null,
+      outcome: null,
+    );
   }
 
   Future<void> _insertCallLogAndEnqueue({
@@ -149,8 +154,30 @@ class AutoCallRepository {
     String? phone,
     required String origin,
   }) async {
+    final entry = _newCallLog(
+      contactId: contactId,
+      contactName: contactName,
+      phone: phone,
+      origin: origin,
+    );
+    await callLogDao.upsert(entry);
+    await db.enqueue(
+      UpsertOp.create(
+        kind: kCallLogsKind,
+        id: entry.id,
+        payloadJson: entry.toJson(),
+      ),
+    );
+  }
+
+  CallLog _newCallLog({
+    required String contactId,
+    required String contactName,
+    String? phone,
+    required String origin,
+  }) {
     final now = DateTime.now().toUtc();
-    final entry = CallLog(
+    return CallLog(
       id: _uuid.v4(),
       contactId: contactId,
       contactName: contactName,
@@ -162,14 +189,6 @@ class AutoCallRepository {
       updatedAt: now,
       deletedAt: null,
       deletedAtLocal: null,
-    );
-    await callLogDao.upsert(entry);
-    await db.enqueue(
-      UpsertOp.create(
-        kind: _kindCallLogs,
-        id: entry.id,
-        payloadJson: entry.toJson(),
-      ),
     );
   }
 }

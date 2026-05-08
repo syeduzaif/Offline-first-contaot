@@ -20,7 +20,7 @@ class SyncEngineService {
           transport: transport,
           tables: [
             SyncableTable<Contact>(
-              kind: AppConstants.contactsKind,
+              kind: kContactsKind,
               table: db.contacts,
               fromJson: Contact.fromJson,
               toJson: (c) => c.toJson(),
@@ -28,7 +28,7 @@ class SyncEngineService {
               getUpdatedAt: (c) => c.updatedAt,
             ),
             SyncableTable<CallLog>(
-              kind: AppConstants.callLogsKind,
+              kind: kCallLogsKind,
               table: db.callLogs,
               fromJson: CallLog.fromJson,
               toJson: (c) => c.toJson(),
@@ -65,26 +65,21 @@ class SyncEngineService {
   /// the foreground timer + connectivity-change listener.
   Future<void> start() async {
     engine.events.listen(_onEvent);
-
-    _connectivitySub = connectivity.onStatusChanged.listen((online) {
-      if (online) {
-        appLogger.i('Connectivity restored — triggering sync.');
-        unawaited(syncNow());
-      }
-    });
-
-    _foregroundTimer = Timer.periodic(
-      AppConstants.foregroundSyncInterval,
-      (_) {
-        if (connectivity.isOnline) unawaited(syncNow());
-        unawaited(_fireDueCalls());
-      },
-    );
-
-    if (connectivity.isOnline) {
-      await syncNow();
-    }
+    _connectivitySub = connectivity.onStatusChanged.listen(_onConnectivity);
+    _foregroundTimer = Timer.periodic(kForegroundSyncInterval, _onTick);
+    if (connectivity.isOnline) await syncNow();
     await _fireDueCalls();
+  }
+
+  void _onConnectivity(bool online) {
+    if (!online) return;
+    appLogger.i('Connectivity restored — triggering sync.');
+    unawaited(syncNow());
+  }
+
+  void _onTick(Timer _) {
+    if (connectivity.isOnline) unawaited(syncNow());
+    unawaited(_fireDueCalls());
   }
 
   Future<void> _fireDueCalls() async {
@@ -92,9 +87,7 @@ class SyncEngineService {
     if (repo == null) return;
     try {
       final fired = await repo.fireDueScheduledCalls(openDialer: false);
-      if (fired > 0) {
-        appLogger.i('Marked $fired scheduled call(s) as missed (foreground tick).');
-      }
+      if (fired > 0) appLogger.i('Marked $fired due call(s) as missed.');
     } catch (e, st) {
       appLogger.e('fireDueScheduledCalls failed', error: e, stackTrace: st);
     }

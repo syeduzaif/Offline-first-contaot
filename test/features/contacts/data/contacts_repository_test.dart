@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_dummy_app/constants_local.dart';
+import 'package:offline_dummy_app/core/constants/app_constants.dart';
 import 'package:offline_dummy_app/core/services/database.dart';
 import 'package:offline_dummy_app/features/contacts/data/local/contacts_dao.dart';
 import 'package:offline_dummy_app/features/contacts/data/repositories/contacts_repository.dart';
@@ -26,7 +26,7 @@ void main() {
 
     final queued = await db.takeOutbox();
     expect(queued, hasLength(1));
-    expect(queued.first.kind, kindUsers);
+    expect(queued.first.kind, kContactsKind);
     expect(queued.first.id, c.id);
   });
 
@@ -43,7 +43,7 @@ void main() {
 
     final queued = await db.takeOutbox();
     expect(queued, hasLength(1));
-    expect(queued.first.kind, kindUsers);
+    expect(queued.first.kind, kContactsKind);
     expect(queued.first.id, c.id);
   });
 
@@ -57,7 +57,7 @@ void main() {
     final ops = await db.takeOutbox();
     expect(ops, hasLength(1));
     final op = ops.first;
-    expect(op.kind, kindUsers);
+    expect(op.kind, kContactsKind);
     expect(op.id, first.id);
   });
 }

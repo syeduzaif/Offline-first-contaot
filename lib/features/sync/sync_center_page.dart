@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_first_sync_drift/offline_first_sync_drift.dart';
 
-import '../../core/services/sync_engine_service.dart';
+import '../../core/services/sync_engine.dart';
 import '../contacts/presentation/controllers/providers.dart';
 
 class SyncCenterPage extends ConsumerWidget {

@@ -9,7 +9,7 @@ import 'core/services/connectivity_service.dart';
 import 'core/services/database.dart';
 import 'core/services/jsonplaceholder_transport.dart';
 import 'core/services/secure_storage.dart';
-import 'core/services/sync_engine_service.dart';
+import 'core/services/sync_engine.dart';
 import 'core/utils/logger.dart';
 import 'features/auto_call/data/local/call_log_dao.dart';
 import 'features/auto_call/data/local/scheduled_calls_dao.dart';
@@ -23,7 +23,7 @@ Future<void> main() async {
   final db = await AppDatabase.openEncrypted(passphrase);
 
   final dio = Dio(BaseOptions(
-    baseUrl: AppConstants.apiBaseUrl,
+    baseUrl: kApiBaseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   ));

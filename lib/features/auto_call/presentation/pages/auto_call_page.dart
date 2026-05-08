@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/loading_widget.dart';
 import '../controllers/providers.dart';
 import '../widgets/call_log_tile.dart';
 import '../widgets/scheduled_call_tile.dart';
@@ -80,7 +81,7 @@ class _UpcomingTab extends ConsumerWidget {
               .toList(growable: false),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const LoadingWidget(),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -107,7 +108,7 @@ class _HistoryTab extends ConsumerWidget {
               .toList(growable: false),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const LoadingWidget(),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -135,7 +136,7 @@ class _CallLogTab extends ConsumerWidget {
           itemBuilder: (_, i) => CallLogTile(log: list[i]),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const LoadingWidget(),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }

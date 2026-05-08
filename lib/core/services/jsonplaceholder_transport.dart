@@ -51,30 +51,31 @@ class JsonPlaceholderTransport implements TransportAdapter {
 
   Future<PushResult> _pushOne(Op op) async {
     try {
-      if (op is UpsertOp) {
-        final isCreate = !_looksLikeServerId(op.id);
-        final method = isCreate ? 'POST' : 'PUT';
-        final path = isCreate ? '/${op.kind}' : '/${op.kind}/${op.id}';
-        final res = await dio.request<Map<String, dynamic>>(
-          path,
-          data: op.payloadJson,
-          options: Options(method: method),
-        );
-        return PushSuccess(serverData: res.data);
-      }
-      if (op is DeleteOp) {
-        await dio.delete<dynamic>('/${op.kind}/${op.id}');
-        return const PushSuccess();
-      }
+      if (op is UpsertOp) return await _pushUpsert(op);
+      if (op is DeleteOp) return await _pushDelete(op);
       return PushError(ArgumentError('Unknown op: $op'));
     } on DioException catch (e, st) {
-      if (e.response?.statusCode == 404) {
-        return const PushNotFound();
-      }
-      return PushError(e, st);
+      return e.response?.statusCode == 404
+          ? const PushNotFound()
+          : PushError(e, st);
     } catch (e, st) {
       return PushError(e, st);
     }
+  }
+
+  Future<PushResult> _pushUpsert(UpsertOp op) async {
+    final isCreate = !_looksLikeServerId(op.id);
+    final res = await dio.request<Map<String, dynamic>>(
+      isCreate ? '/${op.kind}' : '/${op.kind}/${op.id}',
+      data: op.payloadJson,
+      options: Options(method: isCreate ? 'POST' : 'PUT'),
+    );
+    return PushSuccess(serverData: res.data);
+  }
+
+  Future<PushResult> _pushDelete(DeleteOp op) async {
+    await dio.delete<dynamic>('/${op.kind}/${op.id}');
+    return const PushSuccess();
   }
 
   @override

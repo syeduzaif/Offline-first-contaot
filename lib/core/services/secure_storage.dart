@@ -18,14 +18,14 @@ class SecureStorageService {
 
   /// Returns the SQLCipher passphrase, generating and persisting one on first run.
   Future<String> getOrCreateSqlCipherKey() async {
-    final existing = await _storage.read(key: AppConstants.secureStorageKeyName);
+    final existing = await _storage.read(key: kSecureStorageKeyName);
     if (existing != null && existing.isNotEmpty) {
       return existing;
     }
     final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
     final key = base64Url.encode(bytes);
     await _storage.write(
-      key: AppConstants.secureStorageKeyName,
+      key: kSecureStorageKeyName,
       value: key,
     );
     return key;

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/services/sync_engine_service.dart';
+import '../../core/services/sync_engine.dart';
+import '../../core/widgets/loading_widget.dart';
 import '../contacts/presentation/controllers/providers.dart';
 
 class StatsPage extends ConsumerWidget {
@@ -111,7 +112,7 @@ class StatsPage extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LoadingWidget(),
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );

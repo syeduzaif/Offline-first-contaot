@@ -15,14 +15,14 @@ import 'secure_storage.dart';
 void backgroundCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     appLogger.i('[bg] task=$task fired');
-    if (task != AppConstants.backgroundSyncTaskName) return true;
+    if (task != kBackgroundSyncTaskName) return true;
 
     AppDatabase? db;
     try {
       final key = await SecureStorageService().getOrCreateSqlCipherKey();
       db = await AppDatabase.openEncrypted(key);
       final dio = Dio(BaseOptions(
-        baseUrl: AppConstants.apiBaseUrl,
+        baseUrl: kApiBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
       ));
@@ -32,7 +32,7 @@ void backgroundCallbackDispatcher() {
         transport: transport,
         tables: [
           SyncableTable<Contact>(
-            kind: AppConstants.contactsKind,
+            kind: kContactsKind,
             table: db.contacts,
             fromJson: Contact.fromJson,
             toJson: (c) => c.toJson(),
@@ -40,7 +40,7 @@ void backgroundCallbackDispatcher() {
             getUpdatedAt: (c) => c.updatedAt,
           ),
           SyncableTable<CallLog>(
-            kind: AppConstants.callLogsKind,
+            kind: kCallLogsKind,
             table: db.callLogs,
             fromJson: CallLog.fromJson,
             toJson: (c) => c.toJson(),
@@ -80,9 +80,9 @@ void backgroundCallbackDispatcher() {
 Future<void> registerBackgroundSync() async {
   await Workmanager().initialize(backgroundCallbackDispatcher);
   await Workmanager().registerPeriodicTask(
-    AppConstants.backgroundSyncUniqueName,
-    AppConstants.backgroundSyncTaskName,
-    frequency: AppConstants.backgroundSyncFrequency,
+    kBackgroundSyncUniqueName,
+    kBackgroundSyncTaskName,
+    frequency: kBackgroundSyncFrequency,
     constraints: Constraints(networkType: NetworkType.connected),
     existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
   );

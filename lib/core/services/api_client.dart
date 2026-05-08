@@ -19,7 +19,7 @@ class ApiClient {
 
     dio = Dio(
       BaseOptions(
-        baseUrl: AppConstants.apiBaseUrl,
+        baseUrl: kApiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         responseType: ResponseType.json,

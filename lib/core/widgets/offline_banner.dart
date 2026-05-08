@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../controllers/providers.dart';
+import '../../features/contacts/presentation/controllers/providers.dart';
 
 class OfflineBanner extends ConsumerWidget {
   const OfflineBanner({super.key});

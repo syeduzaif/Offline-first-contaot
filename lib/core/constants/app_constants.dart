@@ -1,16 +1,16 @@
-class AppConstants {
-  const AppConstants._();
+// App-wide constants. Per the agent guidelines, prefer top-level
+// `k`-prefixed constants here over class-statics scattered across the
+// codebase.
 
-  static const String appName = 'Offline Dummy';
-  static const String dbFileName = 'app.db';
-  static const String secureStorageKeyName = 'sqlcipher_key_v1';
+const String kAppName = 'Offline Dummy';
+const String kDbFileName = 'app.db';
+const String kSecureStorageKeyName = 'sqlcipher_key_v1';
 
-  static const String apiBaseUrl = 'https://jsonplaceholder.typicode.com';
-  static const String contactsKind = 'users';
-  static const String callLogsKind = 'call_logs';
+const String kApiBaseUrl = 'https://jsonplaceholder.typicode.com';
+const String kContactsKind = 'users';
+const String kCallLogsKind = 'call_logs';
 
-  static const Duration foregroundSyncInterval = Duration(seconds: 30);
-  static const Duration backgroundSyncFrequency = Duration(minutes: 15);
-  static const String backgroundSyncTaskName = 'syncContacts';
-  static const String backgroundSyncUniqueName = 'sync-contacts';
-}
+const Duration kForegroundSyncInterval = Duration(seconds: 30);
+const Duration kBackgroundSyncFrequency = Duration(minutes: 15);
+const String kBackgroundSyncTaskName = 'syncContacts';
+const String kBackgroundSyncUniqueName = 'sync-contacts';

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/widgets/offline_banner.dart';
 import '../controllers/providers.dart';
 import '../widgets/contact_tile.dart';
-import '../widgets/offline_banner.dart';
 import '../widgets/sync_status_chip.dart';
 import 'contact_detail_page.dart';
 import 'contact_edit_page.dart';
@@ -81,8 +82,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                   ),
                 );
               },
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const LoadingWidget(),
               error: (e, _) => Center(child: Text('Error: $e')),
             ),
           ),
